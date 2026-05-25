@@ -1,0 +1,70 @@
+---
+# tasks/open/SMO-0102-vendor-manifest-skeleton.yml
+#
+# Phase-1: scaffold vendor/ tracked files only (clones themselves are gitignored).
+# Source: planner finalisation 2026-05-25.
+
+id: SMO-0102
+title: "Create vendor/ skeleton: README, empty MANIFEST.yml, .gitkeep"
+type: docs
+linked_adr: "docs/adr/0003-vendor-strategy.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "vendor/README.md"
+    - "vendor/MANIFEST.yml"
+    - "vendor/.gitkeep"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "PLAN.md"
+  inputs:
+    initial_entries: []
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "vendor/MANIFEST.yml"
+    - "vendor/README.md"
+
+S:
+  - "vendor/README.md explains the vendor strategy: manifest-pinned clones, gitignore rule, vendor-sync workflow, and the Source-Upstream/Source-License commit-trailer convention"
+  - "vendor/README.md cites ADR-0003 by path"
+  - "vendor/MANIFEST.yml is a valid YAML document with version: 1, an empty upstreams: [] list, and a header comment pointing to ADR-0003 and the future JSON Schema path"
+  - "vendor/MANIFEST.yml passes basic YAML parse (no schema validation yet — schema lands in SMO-0105)"
+  - "vendor/.gitkeep is empty"
+  - "No vendor/<name>/ clone directories are committed"
+  - "Note in PR body: .gitignore edit for vendor/* is intentionally deferred to SMO-0103 (policy-override PR) to keep this task within docs budget"
+
+R:
+  max_tokens: 150000
+  max_wall_minutes: 45
+  max_files_changed: 3
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0101 (ADR-0003) is merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "audit chain verifies clean (verify-chain.py exit 0)"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/governance"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

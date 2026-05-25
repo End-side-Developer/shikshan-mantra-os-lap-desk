@@ -1,0 +1,15 @@
+---
+# tests/fixtures/vendor-manifest/valid-minimal.yml
+#
+# Minimum valid vendor manifest: one upstream, every required field present,
+# integration_targets empty (pinned but not yet integrated).
+
+version: 1
+upstreams:
+  - name: example-upstream
+    upstream_url: "https://github.com/example/example-upstream"
+    pinned_commit: "0123456789abcdef0123456789abcdef01234567"
+    license: "MIT"
+    integration_targets: []
+    last_synced: "2026-05-25T10:00:00Z"
+    reviewer_team: "shikshan-security"

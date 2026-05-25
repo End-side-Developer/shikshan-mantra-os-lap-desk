@@ -1,0 +1,85 @@
+---
+# tasks/open/SMO-0105-vendor-manifest-schema.yml
+#
+# Phase-1: JSON Schema (Draft 2020-12) for vendor/MANIFEST.yml. Lives next to
+# the existing module/catalog schemas — staying-distributed decision per
+# planner-2 (no root-level schemas/ hub).
+
+id: SMO-0105
+title: "Add JSON Schema for vendor/MANIFEST.yml under modules/catalogs/schemas/"
+type: tests
+linked_adr: "docs/adr/0003-vendor-strategy.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/vendor-manifest.schema.json"
+    - "tests/unit/schemas/test_vendor_manifest_schema.py"
+    - "tests/fixtures/vendor-manifest/valid-minimal.yml"
+    - "tests/fixtures/vendor-manifest/valid-multi.yml"
+    - "tests/fixtures/vendor-manifest/invalid-missing-sha.yml"
+    - "tests/fixtures/vendor-manifest/invalid-bad-license.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "modules/catalogs/schemas/module.schema.json"
+    - "modules/catalogs/schemas/catalog.schema.json"
+  inputs:
+    schema_draft: "2020-12"
+    required_fields:
+      - "name"
+      - "upstream_url"
+      - "pinned_commit"
+      - "license"
+      - "integration_targets"
+      - "last_synced"
+      - "reviewer_team"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/unit/schemas/test_vendor_manifest_schema.py"
+  coverage_delta: 0.5
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/vendor-manifest.schema.json"
+
+S:
+  - "vendor-manifest.schema.json declares all 7 required fields with appropriate types"
+  - "pinned_commit field requires a 40-character lowercase hex string (regex enforced)"
+  - "license field requires a valid SPDX identifier (enum or pattern, matching the approach in catalog.schema.json)"
+  - "integration_targets is an array of repo-relative path strings; entries pointing into policies/protected-paths.yml deny: globs are rejected by schema or by an accompanying validator note"
+  - "last_synced field is ISO-8601 date-time"
+  - "All four fixture YAML files parse; valid-* pass schema, invalid-* fail with the expected error path"
+  - "Unit test enumerates each fixture and asserts pass/fail outcome via jsonschema"
+  - "Schema $id follows the convention from modules/catalogs/schemas/module.schema.json"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 250000
+  max_wall_minutes: 60
+  max_files_changed: 6
+  max_diff_lines: 600
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0101 (ADR-0003) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "audit chain verifies clean (verify-chain.py exit 0)"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/governance"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

@@ -1,0 +1,29 @@
+# vendor/MANIFEST.yml
+#
+# Source of truth for manifest-pinned upstream third-party clones.
+#
+# Authoritative decision: docs/adr/0003-vendor-strategy.md.
+# Schema (to be created by SMO-0105):
+#   modules/catalogs/schemas/vendor-manifest.schema.json
+#
+# Entry shape (informative — schema is authoritative once SMO-0105 lands):
+#   - name: <slug>                      # filesystem-safe, matches vendor/<name>/
+#     upstream_url: <https URL>         # canonical upstream remote
+#     pinned_commit: <40-char hex SHA>  # exact upstream commit being pinned
+#     license: <SPDX-identifier>        # e.g. "MPL-2.0", "Apache-2.0"
+#     integration_targets:              # repo-relative paths that may receive
+#       - <path>                        # copy-with-attribution commits
+#     last_synced: <YYYY-MM-DD>         # ISO date of most recent verified sync
+#     reviewer_team: <github-team>      # e.g. "@shikshan/security"
+#
+# Tool: scripts/dev/vendor-sync.py (SMO-0104) consumes this file.
+# Commit-trailer convention: every commit that copies bytes from
+# vendor/<name>/ into the repo must carry both
+#   Source-Upstream: vendor/<name>@<short-SHA>
+#   Source-License: <SPDX-identifier>
+# trailers. See vendor/README.md for the full convention.
+#
+# First pin entry lands in SMO-0106; this scaffold intentionally ships empty.
+
+version: 1
+upstreams: []

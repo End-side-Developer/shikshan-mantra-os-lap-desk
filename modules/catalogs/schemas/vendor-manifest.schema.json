@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shikshan-mantra-os/modules/catalogs/schemas/vendor-manifest.schema.json",
+  "title": "Shikshan Mantra OS Vendor Manifest",
+  "description": "Canonical schema for vendor/MANIFEST.yml. Lists upstream third-party projects pinned by SHA, with SPDX license attribution and integration targets. Per ADR-0003 (docs/adr/0003-vendor-strategy.md).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "upstreams"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version; pinned to 1 until a superseding ADR ships."
+    },
+    "upstreams": {
+      "type": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "upstream_url",
+          "pinned_commit",
+          "license",
+          "integration_targets",
+          "last_synced",
+          "reviewer_team"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Slug-style local name under vendor/<name>/."
+          },
+          "upstream_url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^(https?|git)://",
+            "description": "Upstream clone URL; must use http, https, or git scheme."
+          },
+          "pinned_commit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$",
+            "description": "Full 40-character lowercase hex SHA-1 commit pin."
+          },
+          "license": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9.+-]+(?:[ ]WITH[ ][A-Za-z0-9.+-]+)?$",
+            "minLength": 1,
+            "description": "SPDX license identifier (e.g., MIT, Apache-2.0, GPL-3.0-or-later, CC-BY-SA-4.0). Optional 'WITH <exception>' clause permitted."
+          },
+          "integration_targets": {
+            "type": "array",
+            "minItems": 0,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.][A-Za-z0-9_./-]*$",
+              "description": "Repo-relative POSIX path (no leading slash, no backslashes, no '..' segments)."
+            },
+            "description": "Repo-relative POSIX paths the upstream content is copied to. Empty array allowed for manifest entries that are pinned but not yet integrated. Note: an accompanying validator (scripts/dev/vendor-sync.py per SMO-0104) rejects entries that fall under policies/protected-paths.yml deny: globs."
+          },
+          "last_synced": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 date-time of the last successful local sync against pinned_commit."
+          },
+          "reviewer_team": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "GitHub team slug responsible for reviewing pin updates for this upstream."
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional human-readable note on why this upstream is vendored."
+          },
+          "tree_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Optional SHA-256 over the canonical tree manifest of the copied subset."
+          }
+        }
+      }
+    }
+  }
+}

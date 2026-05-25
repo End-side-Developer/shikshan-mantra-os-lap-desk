@@ -1,0 +1,74 @@
+---
+# tasks/open/SMO-0104-vendor-sync-tool.yml
+#
+# Phase-1: vendor-sync tool. Relocated to scripts/dev/ per locked decision
+# (Q2 — scripts/dev/ is already allowlisted; avoids second override PR).
+
+id: SMO-0104
+title: "Add scripts/dev/vendor-sync.py with check, pull, verify subcommands"
+type: build-config
+linked_adr: "docs/adr/0003-vendor-strategy.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "scripts/dev/vendor-sync.py"
+    - "tests/unit/scripts/dev/test_vendor_sync.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "vendor/MANIFEST.yml"
+    - "modules/catalogs/schemas/vendor-manifest.schema.json"
+    - "scripts/README.md"
+  inputs:
+    cli_subcommands: ["check", "pull", "verify"]
+    network_gate_flag: "--confirm-network"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/unit/scripts/dev/test_vendor_sync.py"
+  coverage_delta: 0.3
+  sbom_diff: null
+  artifacts:
+    - "scripts/dev/vendor-sync.py"
+
+S:
+  - "scripts/dev/vendor-sync.py implements argparse with subcommands check, pull, verify"
+  - "`check` mode validates vendor/MANIFEST.yml against modules/catalogs/schemas/vendor-manifest.schema.json and exits non-zero on schema failure"
+  - "`pull` mode clones each manifest entry into vendor/<name>/ at the pinned commit; refuses to run without --confirm-network"
+  - "`verify` mode walks vendor/<name>/.git and asserts HEAD matches the pinned SHA from MANIFEST"
+  - "Script refuses to run any subcommand if vendor/MANIFEST.yml fails schema validation"
+  - "Unit tests cover: schema validation success, schema failure, SHA-mismatch detection, missing --confirm-network rejection (no real network)"
+  - "Script imports limited to: Python stdlib + PyYAML + jsonschema"
+  - "No new lintian E:/W: lines and all required-status-checks pass on the PR"
+
+R:
+  max_tokens: 250000
+  max_wall_minutes: 90
+  max_files_changed: 3
+  max_diff_lines: 500
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0102 (vendor skeleton) merged on main"
+  - "SMO-0105 (manifest JSON Schema) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "audit chain verifies clean (verify-chain.py exit 0)"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

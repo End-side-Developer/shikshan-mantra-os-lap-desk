@@ -1,0 +1,14 @@
+---
+# tests/fixtures/vendor-manifest/invalid-missing-sha.yml
+#
+# Invalid: pinned_commit is omitted entirely. Schema must report a `required`
+# error on the upstreams[0] item.
+
+version: 1
+upstreams:
+  - name: example-upstream
+    upstream_url: "https://github.com/example/example-upstream"
+    license: "MIT"
+    integration_targets: []
+    last_synced: "2026-05-25T10:00:00Z"
+    reviewer_team: "shikshan-security"

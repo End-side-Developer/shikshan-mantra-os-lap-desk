@@ -1,0 +1,77 @@
+---
+# tasks/open/SMO-0106-vendor-pin-debian-live-build.yml
+#
+# Phase-1 capstone: first real vendor pin. Demonstrates the end-to-end flow.
+# Reference-only pin (integration_targets: []), so no copy-with-attribution
+# work is required by THIS task.
+
+id: SMO-0106
+title: "Pin first vendor entry: debian-live-build reference in vendor/MANIFEST.yml"
+type: build-config
+linked_adr: "docs/adr/0003-vendor-strategy.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "vendor/MANIFEST.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "modules/catalogs/schemas/vendor-manifest.schema.json"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    vendor_name: "debian-live-build"
+    upstream_url: "https://salsa.debian.org/live-team/live-build.git"
+    pinned_commit: "<TO_BE_FILLED_BY_BUILDER>"
+    license: "GPL-3.0-or-later"
+    integration_targets: []
+    reviewer_team: "security"
+    purpose: "Reference for live-build hook conventions and examples; no in-repo integration yet"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "vendor/MANIFEST.yml"
+
+S:
+  - "vendor/MANIFEST.yml gains one upstreams[] entry for debian-live-build with all 7 required fields populated"
+  - "Entry's pinned_commit is a real 40-character lowercase hex SHA visible at the upstream URL as of PR-open date"
+  - "Entry's license is `GPL-3.0-or-later` (SPDX); integration_targets is [] (reference-only pin)"
+  - "scripts/dev/vendor-sync.py --check returns 0 against the updated MANIFEST"
+  - "PR carries label `vendor-pin-update`"
+  - "PR has 1 reviewer from team:security per the label's `requires` (per policies/sensitive-change-labels.yml)"
+  - "Commit body includes trailers `Source-Upstream: vendor/debian-live-build@<short-SHA>` and `Source-License: GPL-3.0-or-later`"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 250000
+  max_wall_minutes: 90
+  max_files_changed: 1
+  max_diff_lines: 50
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0102, SMO-0103, SMO-0104, SMO-0105 all merged on main"
+  - "Label `vendor-pin-update` exists per policies/sensitive-change-labels.yml"
+  - "PR opener applies label `vendor-pin-update` at PR-open time"
+  - "audit chain verifies clean (verify-chain.py exit 0)"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/security"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

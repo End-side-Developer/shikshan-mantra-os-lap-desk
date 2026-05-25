@@ -1,0 +1,16 @@
+---
+# tests/fixtures/vendor-manifest/invalid-bad-license.yml
+#
+# Invalid: `license` is a free-text English phrase, not an SPDX identifier.
+# Spaces (other than within a `WITH <exception>` clause) and the trailing
+# parenthetical violate the SPDX identifier grammar enforced by the schema.
+
+version: 1
+upstreams:
+  - name: example-upstream
+    upstream_url: "https://github.com/example/example-upstream"
+    pinned_commit: "0123456789abcdef0123456789abcdef01234567"
+    license: "Free for everyone (probably)"
+    integration_targets: []
+    last_synced: "2026-05-25T10:00:00Z"
+    reviewer_team: "shikshan-security"

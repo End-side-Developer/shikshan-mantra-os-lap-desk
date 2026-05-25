@@ -1,0 +1,28 @@
+---
+# tests/fixtures/vendor-manifest/valid-multi.yml
+#
+# Two upstreams with mixed integration_targets: one pinned-but-not-integrated,
+# one with multiple copy destinations across config/ and modules/. Exercises the
+# optional `purpose` and `tree_sha256` fields on the second entry.
+
+version: 1
+upstreams:
+  - name: locales-data
+    upstream_url: "https://github.com/example/locales-data"
+    pinned_commit: "abcdef0123456789abcdef0123456789abcdef01"
+    license: "CC-BY-SA-4.0"
+    integration_targets: []
+    last_synced: "2026-04-12T08:30:00Z"
+    reviewer_team: "shikshan-content"
+
+  - name: firefox-policies
+    upstream_url: "https://github.com/mozilla/policy-templates"
+    pinned_commit: "fedcba9876543210fedcba9876543210fedcba98"
+    license: "MPL-2.0"
+    integration_targets:
+      - "config/includes.chroot/etc/firefox/policies/policies.json"
+      - "modules/core/browser-safety/assets/policy-reference.md"
+    last_synced: "2026-05-20T14:15:30Z"
+    reviewer_team: "shikshan-security"
+    purpose: "Reference enterprise Firefox policy templates used as a baseline for the kiosk profile."
+    tree_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
