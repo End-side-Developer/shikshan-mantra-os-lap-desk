@@ -1,0 +1,18 @@
+# config/package-lists/learning-kolibri.list.chroot
+# Offline learning platform. Configured to start automatically; content
+# delivery via Shikshan Mantra module catalogs.
+
+kolibri
+
+# Browsers used by the launcher to embed Kolibri and HTML modules.
+firefox-esr
+firefox-esr-l10n-hi
+
+# Python (Kolibri runs on it; also for Python lab modules)
+python3
+python3-pip
+python3-venv
+
+# Block editor (Blockly-based coding labs).
+# Currently delivered as in-repo web app under modules/core/blockly-intro/
+# until upstream Debian package lands. See task SMO-0010.

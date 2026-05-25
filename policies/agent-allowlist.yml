@@ -1,0 +1,127 @@
+# policies/agent-allowlist.yml
+#
+# Paths AI agents MAY edit without an override, subject to:
+#   1. The path appearing here under `allow:` (glob match)
+#   2. The path also appearing in the agent's task contract `I.files_in_scope`
+#   3. None of those paths intersecting policies/protected-paths.yml `deny:`
+#
+# `append_only:` paths additionally forbid deletions, rewrites, or modifications
+# to existing content — only appending new content (e.g., CHANGELOG.md
+# "Unreleased" section, audit log exports).
+
+version: 1
+
+allow:
+  # Documentation (except seed ADRs which are in deny:)
+  - "docs/adr/**"
+  - "docs/architecture/**"
+  - "docs/runbooks/**"
+  - "docs/security/**"
+  - "docs/governance/**"
+  - "docs/glossary.md"
+  - "docs/MODEL_CARD.md"
+
+  # CHANGELOG — append-only, see below
+  - "CHANGELOG.md"
+  - "README.md"
+  - "CONTRIBUTING.md"
+
+  # First-party modules
+  - "modules/core/**"
+  - "modules/README.md"
+
+  # Official catalog (signature step must run; see ADR-0004 when written)
+  - "modules/catalogs/official.catalog.yml"
+  - "modules/catalogs/schemas/**"
+
+  # live-build configuration the agent may edit
+  - "config/package-lists/*.list.chroot"
+  - "config/package-lists/*.list.binary"
+  - "config/hooks/live/**"
+  - "config/hooks/normal/**"
+  - "config/includes.chroot/etc/skel/**"
+  - "config/includes.chroot/etc/shikshan/**"
+  - "config/includes.chroot/usr/share/shikshan/**"
+  - "config/includes.chroot/usr/local/bin/**"
+  - "config/includes.chroot/var/lib/shikshan/**"
+  - "config/preseed/**"
+
+  # Tests — agents are expected to add tests for every change
+  - "tests/**"
+
+  # Task queue files (claimed by the agent itself)
+  - "tasks/open/**"
+  - "tasks/in-progress/**"
+  - "tasks/blocked/**"
+  - "tasks/README.md"
+  - "tasks/examples/**"
+
+  # Build scripts (NOT verify/* and NOT audit/* — those stay in deny)
+  - "scripts/build/**"
+  - "scripts/dev/**"
+
+  # .claude scaffold the agent may iterate on (subagents, skills, commands)
+  - ".claude/agents/**"
+  - ".claude/skills/**"
+  - ".claude/commands/**"
+
+  # NOT .claude/settings.json or .claude/hooks/** — those modify the agent's
+  # own runtime gates and are protected (see deny list — added there if
+  # absent; see ADR-0003 if tightening).
+
+append_only:
+  - "CHANGELOG.md"                     # only the [Unreleased] section
+  - "docs/audit/exports/**"            # audit exports are immutable artifacts
+  - "tasks/completed/**"               # completed tasks are an immutable archive
+
+# Tasks claim ownership of their own in-progress file. The placeholder
+# <self> is replaced at runtime by the task ID from the contract.
+# The pre-tool-use hook validates that an agent only writes to its own
+# in-progress entry.
+self_owned_paths:
+  - "tasks/in-progress/<self>.yml"
+
+# Bash commands AI agents may execute without prompting. Anything outside
+# this list either prompts the harness for permission or is auto-denied,
+# depending on harness settings in .claude/settings.json.
+bash_allowlist:
+  - "git status"
+  - "git diff*"
+  - "git log*"
+  - "git branch*"
+  - "git fetch*"
+  - "git checkout -b agent/SMO-*"
+  - "git add *"
+  - "git commit -S*"
+  - "git push origin agent/SMO-*"
+  - "gh pr view*"
+  - "gh pr create*"
+  - "gh issue view*"
+  - "pre-commit run*"
+  - "python scripts/audit/verify-chain.py*"
+  - "python scripts/policy/check-protected-paths.py*"
+  - "python scripts/policy/check-allowlist.py*"
+  - "bash scripts/verify/verify-manifests.sh"
+  - "bash scripts/verify/verify-iso.sh*"
+  - "bash scripts/build/build-iso.sh*"
+  - "shellcheck *"
+  - "yamllint *"
+  - "ls *"
+  - "cat *"            # via Read tool preferred; raw cat allowed read-only
+
+# Bash commands AI agents MAY NEVER execute, even with permission.
+bash_forbidden:
+  - "rm -rf /"
+  - "git push --force*"
+  - "git push -f*"
+  - "git reset --hard*"
+  - "git rebase -i*"
+  - "git commit --no-verify*"
+  - "git commit --amend*"
+  - "git config --global*"
+  - "sudo *"
+  - "curl * | sh*"
+  - "curl * | bash*"
+  - "wget * | sh*"
+  - "wget * | bash*"
+  - "*--no-gpg-sign*"

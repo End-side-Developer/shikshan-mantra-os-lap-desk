@@ -1,0 +1,10 @@
+# config/package-lists/safety-filtering.list.chroot
+# School-safe web filtering. PLAN.md "Safety" + AGENTS.md §13 defaults.
+# Changes to safety-default packages auto-apply touches-safety-defaults
+# label (per policies/sensitive-change-labels.yml).
+
+dnsmasq                  # local DNS resolver for school-safe DNS rewrites
+e2guardian               # optional content-filter proxy
+ca-certificates
+iptables
+nftables

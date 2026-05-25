@@ -1,0 +1,36 @@
+#!/bin/sh
+# auto/build — invoke live-build. Called by scripts/build/build-iso.sh.
+# PROTECTED: see CODEOWNERS (@shikshan/platform @shikshan/security).
+
+set -eu
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "auto/build must run as root inside the build container" >&2
+    exit 1
+fi
+
+# Clean state from previous runs that may have failed mid-way
+lb clean --purge 2>/dev/null || true
+
+# Reconfigure (idempotent; auto/config is the source of truth)
+./auto/config "${@}"
+
+# Build
+lb build "${@}"
+
+# Move resulting ISO to artifacts/ for downstream verification
+mkdir -p artifacts/
+if [ -f "binary.hybrid.iso" ]; then
+    mv binary.hybrid.iso artifacts/shikshan.iso
+elif [ -f "binary.iso" ]; then
+    mv binary.iso artifacts/shikshan.iso
+else
+    echo "auto/build: no ISO produced" >&2
+    exit 2
+fi
+
+# Hashes
+sha256sum artifacts/shikshan.iso | tee artifacts/shikshan.iso.sha256
+sha512sum artifacts/shikshan.iso | tee artifacts/shikshan.iso.sha512
+
+echo "auto/build: complete -> artifacts/shikshan.iso"

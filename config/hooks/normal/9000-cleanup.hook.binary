@@ -1,0 +1,17 @@
+#!/bin/sh
+# config/hooks/normal/9000-cleanup.hook.binary
+#
+# Image-assembly-time cleanup. Reduces image size and removes
+# build-artifact paths the live system shouldn't ship.
+
+set -eu
+
+echo "[hook 9000] cleaning chroot artifacts in binary output"
+
+# Strip apt lists (regenerated on first network update)
+rm -rf chroot/var/lib/apt/lists/* || true
+rm -rf chroot/var/cache/apt/archives/*.deb || true
+
+# Strip docs/man for size (kept lightweight; admin can apt install --reinstall later)
+rm -rf chroot/usr/share/doc/* || true
+rm -rf chroot/usr/share/man/?? chroot/usr/share/man/??_* || true

@@ -1,0 +1,107 @@
+---
+name: "Agent task"
+description: "A unit of work an AI agent (or human) can pick up. Creates a task contract under tasks/open/."
+title: "[SMO-NNNN] "
+labels: ["agent-task", "triage", "ready-for-agent"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue becomes a formal task contract under `tasks/open/SMO-NNNN.yml`
+        when triage assigns an ID and the maintainer-bot copies the fields below
+        into the task file schema (`tasks/schema/task.schema.yml`).
+
+        Humans use the same template — the contract is uniform.
+
+  - type: input
+    id: title
+    attributes:
+      label: Title (≤100 chars)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Task type (matches policies/token-budgets.yml)
+      options:
+        - "docs"
+        - "tests"
+        - "module-add"
+        - "build-config"
+        - "adr"
+        - "fix"
+    validations:
+      required: true
+
+  - type: input
+    id: linked_adr
+    attributes:
+      label: Linked ADR (if architectural)
+      description: "Path docs/adr/NNNN-<slug>.md (leave blank if not architectural)"
+      placeholder: "docs/adr/0007-module-signing-rotation.md"
+
+  - type: textarea
+    id: files_in_scope
+    attributes:
+      label: I.files_in_scope (globs)
+      description: "Repo-relative globs. All must intersect policies/agent-allowlist.yml `allow:` and NONE may intersect protected-paths.yml `deny:`."
+      placeholder: |
+        - modules/core/ai-literacy/**
+        - tests/integration/ai-literacy_test.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: success_criteria
+    attributes:
+      label: S — Success criteria
+      placeholder: |
+        - All required-status-checks pass on the PR
+        - lintian shows no new E:/W: lines
+        - Hindi+English parity tested
+    validations:
+      required: true
+
+  - type: textarea
+    id: budget
+    attributes:
+      label: R — Budget (must fit token-budgets.yml for the task type)
+      value: |
+        max_tokens: 200000
+        max_wall_minutes: 60
+        max_files_changed: 20
+        max_diff_lines: 800
+    validations:
+      required: true
+
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: Φ — Preconditions
+      value: |
+        - issue carries label `ready-for-agent`
+        - ADR exists if change is architectural
+        - no path in I.files_in_scope intersects policies/protected-paths.yml deny
+        - audit chain verifies clean
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Preferred agent
+      options:
+        - "claude-code"
+        - "copilot"
+        - "human"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: "I have read AGENTS.md and the task scope respects protected-paths.yml"
+          required: true
+        - label: "The R: budget is within the per-type cap in policies/token-budgets.yml"
+          required: true

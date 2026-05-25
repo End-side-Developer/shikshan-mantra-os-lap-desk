@@ -1,0 +1,23 @@
+#!/bin/sh
+# config/hooks/live/0020-user-student.hook.chroot
+#
+# Default unprivileged user is `student`. UID 1000.
+# Password is set to an empty initial state and locked; the live session
+# auto-logs-in via LightDM. On install, Calamares sets a real password.
+
+set -eu
+
+echo "[hook 0020] creating student user"
+
+if ! id -u student >/dev/null 2>&1; then
+    adduser --disabled-password --gecos "Student,,,," --uid 1000 student
+fi
+
+# Add to standard groups
+for grp in audio video plugdev netdev; do
+    addgroup --system "$grp" 2>/dev/null || true
+    adduser student "$grp" || true
+done
+
+# Lock root for the live session
+passwd -l root || true

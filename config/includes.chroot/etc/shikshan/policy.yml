@@ -1,0 +1,53 @@
+# /etc/shikshan/policy.yml — Admin policy file
+#
+# Default policy shipped in the live image. Installed systems get a copy
+# at install time; admins edit in place (root-owned, mode 0640).
+# Schema lives at /etc/shikshan/policy.schema.json (validated by the
+# launcher on every boot).
+#
+# Field semantics per PLAN.md "Admin policy file" + per
+# docs/architecture/module-system.md + docs/architecture/progress-store.md.
+
+version: 1
+
+# School-safe filtering
+safety_mode: strict                    # strict | moderate | open
+blocked_categories:
+  - adult
+  - violence
+  - gambling
+  - drugs
+blocked_domains: []                    # explicit additional deny
+allowed_override_password_required: true
+
+# Allowed module catalogs
+allowed_catalogs:
+  - id: shikshan/official
+    trust_level: official
+    update_url: https://catalog.shikshan-mantra.example/official/index.yml
+# Community catalogs added per school by admin.
+
+allowed_trust_levels:
+  - official
+  - verified-community
+# To allow community/experimental, an admin override is required.
+
+# Progress + sync
+sync_endpoint: null                    # null = no sync (default)
+pull_on_sync: false
+persistence_encryption_required: true
+
+# AI assistant (see docs/MODEL_CARD.md)
+ai_provider_mode: off                  # off | local-webgpu | server | cloud
+ai_provider_endpoint: null
+ai_provider_training_data_disclosure_url: null
+ai_refusal_strictness: high            # low | medium | high
+
+# UI
+default_language: en                   # en | hi
+allow_language_switch: true
+default_desktop: lxqt                  # lxqt | icewm-rescue
+
+# Telemetry — opt-in only
+telemetry_enabled: false
+telemetry_endpoint: null

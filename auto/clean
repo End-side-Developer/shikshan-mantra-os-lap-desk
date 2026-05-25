@@ -1,0 +1,7 @@
+#!/bin/sh
+# auto/clean — purge live-build state. PROTECTED.
+set -eu
+lb clean --purge "${@}"
+# Also drop our artifact tree (kept tidy; CI uploads before this fires)
+rm -rf artifacts/ binary.* chroot/ cache/ .build/ || true
+echo "auto/clean: complete"

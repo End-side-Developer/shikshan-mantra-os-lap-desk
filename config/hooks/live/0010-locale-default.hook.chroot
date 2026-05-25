@@ -1,0 +1,18 @@
+#!/bin/sh
+# config/hooks/live/0010-locale-default.hook.chroot
+#
+# Set default locale to en_IN.UTF-8 with hi_IN.UTF-8 available.
+# Runs inside the chroot during live-build.
+
+set -eu
+
+echo "[hook 0010] generating locales"
+
+cat > /etc/locale.gen <<'EOF'
+en_IN UTF-8
+hi_IN UTF-8
+en_US.UTF-8 UTF-8
+EOF
+
+locale-gen
+update-locale LANG=en_IN.UTF-8 LC_ALL=en_IN.UTF-8

@@ -1,0 +1,22 @@
+# config/archives/debian.pref.chroot
+#
+# APT pinning. Default policy: prefer trixie main, allow trixie-updates and
+# trixie-security at higher priority for fixes. No non-free repo enabled by
+# default in v1.
+
+Package: *
+Pin: release n=trixie
+Pin-Priority: 990
+
+Package: *
+Pin: release n=trixie-updates
+Pin-Priority: 990
+
+Package: *
+Pin: release n=trixie-security
+Pin-Priority: 990
+
+# Deny anything outside the pinned snapshots
+Package: *
+Pin: origin ""
+Pin-Priority: -1

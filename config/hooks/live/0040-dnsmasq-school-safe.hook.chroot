@@ -1,0 +1,24 @@
+#!/bin/sh
+# config/hooks/live/0040-dnsmasq-school-safe.hook.chroot
+#
+# School-safe DNS: resolve to Cloudflare Family DNS (1.1.1.3 / 1.0.0.3)
+# by default; admin may override via /etc/shikshan/policy.yml.
+# Listed in policies/sensitive-change-labels.yml touches-safety-defaults.
+
+set -eu
+
+echo "[hook 0040] installing dnsmasq school-safe defaults"
+
+mkdir -p /etc/dnsmasq.d
+cat > /etc/dnsmasq.d/shikshan-school-safe.conf <<'EOF'
+# Shikshan Mantra OS school-safe DNS
+# See /etc/shikshan/policy.yml `blocked_categories` and `blocked_domains`
+# for runtime overrides applied by the launcher.
+no-resolv
+server=1.1.1.3
+server=1.0.0.3
+cache-size=1000
+local-ttl=3600
+EOF
+
+systemctl enable dnsmasq

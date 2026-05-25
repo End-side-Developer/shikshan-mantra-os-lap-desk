@@ -1,0 +1,16 @@
+#!/bin/sh
+# config/hooks/live/0030-autologin.hook.chroot
+#
+# Auto-login as `student` into LXQt for the live session.
+# On installed systems Calamares overrides this with the user's chosen login.
+
+set -eu
+
+echo "[hook 0030] configuring LightDM autologin"
+
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/50-shikshan-autologin.conf <<'EOF'
+[Seat:*]
+autologin-user=student
+autologin-session=lxqt
+EOF

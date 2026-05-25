@@ -1,0 +1,67 @@
+---
+# tasks/examples/SMO-9002-update-package-pin.yml
+#
+# REFERENCE TASK — do not claim. Demonstrates a `build-config` task that
+# CANNOT be done by an agent because every file in scope is in
+# policies/protected-paths.yml `deny:`. The expected outcome of an agent
+# attempting this is the planner refusing and instructing the user to
+# file an ADR + manual PR.
+
+id: SMO-9002
+title: "Bump snapshot.debian.org pin to 2026-08-01 snapshot"
+type: build-config
+linked_issue: "#1002"
+linked_adr: "docs/adr/0003-snapshot-pin-bump.md"  # MUST exist before this task can proceed
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/archives/debian.list.chroot"        # PROTECTED — touches-signing
+    - "docs/adr/0003-snapshot-pin-bump.md"
+  context_docs:
+    - "AGENTS.md"
+    - "docs/security/signing-policy.md"
+    - "docs/runbooks/rotate-signing-key.md"
+    - "docs/adr/0001-debian-live-build.md"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/smoke/test_pin_format.sh"
+  coverage_delta: 0
+  sbom_diff: "artifacts/sbom-diff.txt"
+  artifacts: []
+
+S:
+  - "ADR-0003 is merged before this PR"
+  - "ci-reproducible.yml passes on both old and new pin"
+  - "SBOM diff has ≤10 high-severity CVE changes"
+  - "All required-status-checks pass"
+
+R:
+  max_tokens: 150000
+  max_wall_minutes: 60
+  max_files_changed: 2
+  max_diff_lines: 100
+
+preconditions:
+  - "ADR-0003 exists at docs/adr/0003-snapshot-pin-bump.md and is merged on main"
+  - "PR carries label `allowlist-override` AND `touches-signing`"
+  - "2 distinct CODEOWNERS approvals (@shikshan/security + @shikshan/release-managers)"
+  - "audit chain verifies clean (verify-chain.py exit 0)"
+  - "agent has been explicitly authorized for this override by governance lead"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/security"
+    - "shikshan/release-managers"
+    - "shikshan/governance"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

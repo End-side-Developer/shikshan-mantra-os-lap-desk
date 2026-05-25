@@ -1,0 +1,22 @@
+# config/archives/debian.list.chroot
+#
+# PROTECTED — changes require touches-signing label + two-team approval
+# (@shikshan/security + @shikshan/release-managers) + matching ADR.
+#
+# Pins the build to a snapshot.debian.org timestamp so any contributor with
+# the same source can reproduce the same ISO byte-for-byte (see ADR-0001).
+#
+# Snapshot timestamp updated at most once per release cycle, never inside
+# a release. Updating requires:
+#   1. ADR-NN justifying the bump (security fix, kernel update, etc.)
+#   2. Re-run of ci-reproducible.yml on both old and new pin
+#   3. SBOM diff review
+
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] \
+  https://snapshot.debian.org/archive/debian/20260520T000000Z/ trixie main contrib
+
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] \
+  https://snapshot.debian.org/archive/debian-security/20260520T000000Z/ trixie-security main contrib
+
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] \
+  https://snapshot.debian.org/archive/debian/20260520T000000Z/ trixie-updates main contrib

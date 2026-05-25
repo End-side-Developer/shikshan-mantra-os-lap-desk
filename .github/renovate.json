@@ -1,0 +1,60 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
+    ":timezone(Asia/Kolkata)",
+    ":enableVulnerabilityAlerts",
+    "group:monorepos"
+  ],
+  "labels": ["dependencies"],
+  "rebaseWhen": "conflicted",
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "rangeStrategy": "pin",
+  "schedule": ["before 6am on monday"],
+
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "enabled": false,
+      "description": "GH Actions are owned by Dependabot (see .github/dependabot.yml) — split kept narrow on purpose."
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "requiredStatusChecks": [
+        "lint / yaml-shell-md",
+        "security / gitleaks",
+        "security / commit-signatures",
+        "policy / protected-paths"
+      ]
+    },
+    {
+      "matchPaths": ["config/archives/**"],
+      "enabled": false,
+      "description": "Debian archive pins MUST be changed via human PR with an ADR — see policies/sensitive-change-labels.yml touches-signing."
+    },
+    {
+      "matchPaths": [".pre-commit-config.yaml"],
+      "groupName": "pre-commit hooks",
+      "schedule": ["before 6am on the first day of the month"],
+      "automerge": false,
+      "reviewers": ["team:shikshan/devex", "team:shikshan/security"]
+    }
+  ],
+
+  "vulnerabilityAlerts": {
+    "labels": ["security", "dependencies"],
+    "automerge": false
+  },
+
+  "pre-commit": {
+    "enabled": true
+  }
+}

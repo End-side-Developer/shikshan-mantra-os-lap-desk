@@ -1,0 +1,23 @@
+---
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+default: true
+
+# Line length — we use long links and tables
+MD013:
+  line_length: 120
+  code_blocks: false
+  tables: false
+  headings: false
+
+# Allow inline HTML for badges and details/summary
+MD033: false
+
+# Allow duplicate headings across sections (e.g., "Why" appears multiple times)
+MD024:
+  siblings_only: true
+
+# Bare URLs are OK in CHANGELOG link refs
+MD034: false
+
+# First line doesn't need to be a top-level heading (frontmatter sometimes leads)
+MD041: false

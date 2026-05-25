@@ -1,0 +1,72 @@
+# policies/protected-paths.yml
+#
+# Paths AI agents MUST NOT edit. Edits to any path matching `deny:` are aborted
+# by .claude/hooks/pre-tool-use/protected-paths.sh and rejected by the
+# `ci-protected-paths` workflow.
+#
+# Overrides: a PR may carry label `allowlist-override`. The Ruleset
+# `.github/rulesets/protected-paths.json` then requires 2 distinct human
+# reviewers from 2 distinct CODEOWNERS teams. The override is logged into
+# docs/audit/audit.db with action="override".
+#
+# Changing THIS file is itself protected — it appears in `deny:` below.
+
+version: 1
+
+deny:
+  # CI is the gate; agents cannot modify the gate
+  - ".github/workflows/**"
+  - ".github/rulesets/**"
+  - ".github/CODEOWNERS"
+  - ".github/mergify.yml"
+  - ".github/renovate.json"
+
+  # Policy + governance (the deny/allow lists themselves)
+  - "policies/**"
+  - "AGENTS.md"
+  - "AGENT_CARD.md"
+  - "CLAUDE.md"
+
+  # Legal / disclosure
+  - "LICENSE"
+  - "SECURITY.md"
+  - "CODE_OF_CONDUCT.md"
+
+  # Bootloader / signing / in-house packages
+  - "config/bootloaders/**"
+  - "config/archives/*.key.*"
+  - "config/archives/*.auth.*"
+  - "config/packages.chroot/**"
+
+  # Audit subsystem (auditor of itself)
+  - "scripts/audit/**"
+  - "scripts/verify/verify-slsa.sh"
+  - "scripts/policy/**"
+  - "docs/audit/audit.db"
+  - "docs/audit/audit-log-spec.md"
+
+  # Immutable seed ADRs
+  - "docs/adr/0000-template.md"
+  - "docs/adr/0001-debian-live-build.md"
+  - "docs/adr/0002-audit-log-storage.md"
+
+  # Pre-commit configuration (the local gate)
+  - ".pre-commit-config.yaml"
+
+  # Git plumbing
+  - ".gitignore"
+  - ".gitattributes"
+
+# Number of human reviewers required when a deny-path is overridden.
+# Combined with `.github/rulesets/protected-paths.json#required_reviewers`.
+sensitive_review_required: 2
+
+# Number of distinct CODEOWNERS teams required.
+# Enforced by GitHub's per-team counting of CODEOWNERS satisfaction.
+sensitive_codeowners_teams: 2
+
+# Labels that, when present on a PR, signal an override path is active.
+# Each label is paired with extra checks in policies/sensitive-change-labels.yml.
+override_labels:
+  - allowlist-override
+  - emergency-fix

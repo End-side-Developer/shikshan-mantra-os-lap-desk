@@ -1,0 +1,3 @@
+# tasks/open/
+# Ready-for-agent tasks live here. Triage moves issues into this directory
+# as YAML files validated against tasks/schema/task.schema.yml.

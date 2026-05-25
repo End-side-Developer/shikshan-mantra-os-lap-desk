@@ -1,0 +1,3 @@
+# exports/ holds dated JSONL snapshots of audit.db
+# Populated by scripts/audit/export-jsonl.py
+# Append-only per policies/agent-allowlist.yml

@@ -1,0 +1,4 @@
+# tasks/blocked/
+# Tasks moved here by Ψ-recovery (budget exceeded, protected-path hit,
+# test failure after 2 attempts) or by human decision (ambiguous
+# requirements). Labelled `needs-human` until resolved.

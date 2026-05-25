@@ -1,0 +1,9 @@
+---
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/shikshan-mantra/shikshan-mantra-os/security/advisories/new
+    about: Report privately via GitHub Security Advisories or email security@shikshan-mantra.example. Do NOT open a public issue.
+  - name: Question / Discussion
+    url: https://github.com/shikshan-mantra/shikshan-mantra-os/discussions
+    about: For broader questions, design discussions, and "how do I…?" please use Discussions.

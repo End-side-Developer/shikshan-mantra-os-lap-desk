@@ -1,0 +1,202 @@
+# tasks/schema/task.schema.yml
+#
+# Formal agent task contract. C = (I, O, S, R, T, Φ, Ψ) per
+# docs/architecture/threat-model.md. Validated by:
+#   - .pre-commit-config.yaml `manifest-validate` (local)
+#   - .github/workflows/agent-task-validate.yml (CI; required check)
+#
+# This file is in policies/protected-paths.yml deny: indirectly via
+# tasks/schema/ CODEOWNERS routing (@shikshan/governance @shikshan/devex).
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://shikshan-mantra-os/tasks/task.schema.yml"
+title: "Shikshan Mantra OS Agent Task Contract"
+type: object
+additionalProperties: false
+required:
+  - id
+  - title
+  - type
+  - agent
+  - I
+  - O
+  - S
+  - R
+  - T
+  - preconditions
+  - recovery
+
+properties:
+  id:
+    type: string
+    pattern: "^SMO-[0-9]{4}$"
+    description: "Sequential task ID. Globally unique across the queue."
+
+  title:
+    type: string
+    minLength: 5
+    maxLength: 100
+    description: "Imperative present tense, ≤100 chars. Becomes the PR/branch slug source."
+
+  type:
+    type: string
+    enum: [docs, tests, module-add, build-config, adr, fix]
+    description: "Maps to policies/token-budgets.yml#types for budget enforcement."
+
+  linked_issue:
+    type: string
+    pattern: "^#[0-9]+$"
+    description: "GitHub issue number, e.g., #42."
+
+  linked_adr:
+    type: ["string", "null"]
+    pattern: "^docs/adr/[0-9]{4}-.+\\.md$"
+    description: "Path to the ADR justifying this task, if architectural."
+
+  agent:
+    type: string
+    enum: [claude-code, copilot, human]
+    description: "Which actor class will work this task. Per AGENT_CARD.md."
+
+  # ───────────────────────────── I — INPUT ─────────────────────────────
+  I:
+    type: object
+    additionalProperties: false
+    required: [files_in_scope, context_docs]
+    properties:
+      files_in_scope:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          description: "Repo-relative POSIX glob. MUST be in policies/agent-allowlist.yml allow:. MUST NOT intersect policies/protected-paths.yml deny:."
+      context_docs:
+        type: array
+        items:
+          type: string
+          description: "Files the agent MUST read before editing. Minimum: AGENTS.md, the linked ADR if any."
+      inputs:
+        type: object
+        description: "Free-form task-specific kv (e.g., {module_id: 'ai-literacy-basics'})."
+
+  # ───────────────────────────── O — OUTPUT ────────────────────────────
+  O:
+    type: object
+    additionalProperties: false
+    required: [pr_url, tests_added, coverage_delta]
+    properties:
+      pr_url:
+        type: ["string", "null"]
+        format: uri
+        description: "Populated when the agent opens the PR. Null in tasks/open/."
+      tests_added:
+        type: array
+        items: { type: string }
+        description: "Repo-relative paths to new/updated test files."
+      coverage_delta:
+        type: number
+        minimum: 0
+        description: "Coverage delta in percentage points. MUST be >= 0."
+      sbom_diff:
+        type: ["string", "null"]
+        description: "Path to SBOM diff file (only relevant for build-config tasks)."
+      artifacts:
+        type: array
+        items: { type: string }
+        description: "Repo-relative paths to other produced artifacts."
+
+  # ─────────────────────────── S — SUCCESS ─────────────────────────────
+  S:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      description: "Acceptance criterion in plain English. Must be testable."
+
+  # ─────────────────────────── R — RESOURCE BUDGET ─────────────────────
+  R:
+    type: object
+    additionalProperties: false
+    required: [max_tokens, max_wall_minutes, max_files_changed, max_diff_lines]
+    properties:
+      max_tokens:
+        type: integer
+        minimum: 1
+        maximum: 400000        # absolute ceiling per policies/token-budgets.yml
+      max_wall_minutes:
+        type: integer
+        minimum: 1
+        maximum: 120
+      max_files_changed:
+        type: integer
+        minimum: 1
+        maximum: 40
+      max_diff_lines:
+        type: integer
+        minimum: 1
+        maximum: 1500
+
+  # ─────────────────────────── T — TEMPORAL ────────────────────────────
+  T:
+    type: object
+    additionalProperties: false
+    properties:
+      not_before:
+        type: string
+        format: date-time
+      deadline:
+        type: string
+        format: date-time
+      stale_after_hours:
+        type: integer
+        minimum: 1
+        default: 72
+
+  # ─────────────────────────── Φ — PRECONDITIONS ───────────────────────
+  preconditions:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      description: "Plain-English precondition. The planner subagent asserts each before claiming."
+
+  # ─────────────────────────── Ψ — RECOVERY ────────────────────────────
+  recovery:
+    type: object
+    additionalProperties: false
+    required:
+      - on_budget_exceeded
+      - on_protected_path_hit
+      - on_test_failure_after_2_attempts
+    properties:
+      on_budget_exceeded:
+        type: string
+        const: "move to blocked/ with label needs-human"
+      on_protected_path_hit:
+        type: string
+        const: "abort, write incident to audit, ping CODEOWNERS"
+      on_test_failure_after_2_attempts:
+        type: string
+        const: "open draft PR, label needs-help"
+      escalation_contacts:
+        type: array
+        items:
+          type: string
+          description: "GitHub team handles (without @). Pulled from policies/escalation-matrix.yml."
+
+  # ─────────────────────────── audit refs ──────────────────────────────
+  audit:
+    type: object
+    additionalProperties: false
+    properties:
+      claimed_at:
+        type: string
+        format: date-time
+      claimed_by:
+        type: string
+        description: "agent:<id> or human:<gh-handle>"
+      first_audit_seq:
+        type: ["integer", "null"]
+        description: "audit_entries.sequence_number of the first row this task wrote."
+      last_audit_seq:
+        type: ["integer", "null"]

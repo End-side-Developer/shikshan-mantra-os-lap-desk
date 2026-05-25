@@ -1,0 +1,15 @@
+{
+  "$comment": "Public HMAC key version table. The private keys themselves are NEVER in this repo; they live in cloud KMS bound to GitHub OIDC. This file maps key versions to active ranges so verify-chain.py can validate HMACs computed under historical keys after rotation.",
+  "schema_version": 1,
+  "keys": [
+    {
+      "version": 1,
+      "kms_key_arn_or_uri": "PLACEHOLDER — set on first deploy via docs/runbooks/rotate-signing-key.md",
+      "active_from": "2026-05-25T00:00:00Z",
+      "active_until": null,
+      "oidc_subject_regex": "^repo:shikshan-mantra/shikshan-mantra-os:ref:refs/heads/(main|agent/.+|human/.+|hotfix/.+)$",
+      "developer_local_allowed": true,
+      "developer_local_subject_regex": "^https://github.com/login/oauth/.+$"
+    }
+  ]
+}

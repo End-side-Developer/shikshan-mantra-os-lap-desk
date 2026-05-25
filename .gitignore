@@ -1,0 +1,87 @@
+# live-build build artifacts
+binary/
+binary.iso
+binary.hybrid.iso
+binary.img
+binary.contents
+binary.packages
+binary.list
+binary*.zsync
+binary*.zsync2
+chroot/
+chroot.packages.install
+chroot.packages.live
+chroot.files
+cache/
+local/
+.stage/
+.build/
+auto/.lb-config
+
+# Build outputs
+artifacts/
+out/
+dist/
+build/
+
+# SBOM / scan artifacts (kept in artifacts/, not in repo root)
+*.cdx.json
+*.cdx.xml
+*.sbom.json
+*.spdx.json
+*.intoto.jsonl
+*.sig
+*.cert
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Node (used by commitlint, markdownlint, etc.)
+node_modules/
+package-lock.json
+yarn.lock
+.npm/
+
+# Editor / OS
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code per-developer overrides
+.claude/settings.local.json
+.claude/.session/
+.claude/.cache/
+
+# Pre-commit
+.pre-commit-cache/
+
+# Secrets (must never be committed; gitleaks also blocks)
+*.pem
+*.key
+*.crt
+!config/archives/*.key.chroot
+!config/archives/*.key.binary
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+
+# QEMU / VM test artifacts
+*.qcow2
+*.vmdk
+tests/qemu/.cache/
+tests/qemu/logs/

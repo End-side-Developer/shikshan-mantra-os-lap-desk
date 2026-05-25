@@ -1,0 +1,12 @@
+# modules/core/
+#
+# First-party module bundles ship here. Each module is a directory:
+#
+#   modules/core/<module-id>/
+#   ├── manifest.yml              # validates against modules/catalogs/schemas/module.schema.json
+#   ├── content/                  # HTML / PDF / Blockly / Python / WebXR assets
+#   │   ├── en/
+#   │   └── hi/
+#   └── tests/                    # smoke tests for this module
+#
+# A reference task that adds a module: tasks/examples/SMO-9001-add-module-manifest.yml

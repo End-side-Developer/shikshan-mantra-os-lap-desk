@@ -1,0 +1,125 @@
+# .pre-commit-config.yaml
+#
+# Local quality gates. Mirrors the server-side CI required checks so failures
+# surface before push. Install with: `pre-commit install --install-hooks`.
+#
+# This file is in policies/protected-paths.yml `deny:` — modifications require
+# the `allowlist-override` label and two-team approval (touches-ci).
+
+minimum_pre_commit_version: "3.5.0"
+fail_fast: false
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+default_stages: [pre-commit]
+
+repos:
+
+  # ---- Core hygiene ----
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=100"]
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-toml
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  # ---- YAML linting ----
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint, --strict]
+
+  # ---- Shell linting ----
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning, --color=always]
+
+  # ---- Markdown linting ----
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
+    hooks:
+      - id: markdownlint
+        args: [--config=.markdownlint.yaml]
+
+  # ---- Python formatting and linting ----
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # ---- Secrets scan ----
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.0
+    hooks:
+      - id: gitleaks
+
+  # ---- Conventional commit message ----
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - --types
+          - "feat,fix,chore,docs,refactor,perf,test,ci,build,security,adr"
+
+  # ---- Project-local hooks ----
+  - repo: local
+    hooks:
+
+      - id: protected-paths
+        name: "policy: protected-paths"
+        entry: python scripts/policy/check-protected-paths.py --staged
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: allowlist-conformance
+        name: "policy: agent-allowlist (warn when staged paths fall outside allow:)"
+        entry: python scripts/policy/check-allowlist.py --staged --warn-only
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: manifest-validate
+        name: "validate: module + catalog + policy manifests against JSON Schema"
+        entry: bash scripts/verify/verify-manifests.sh
+        language: system
+        files: "(modules/|policies/|config/includes.chroot/etc/shikshan/).*\\.(yml|yaml|json)$"
+
+      - id: audit-chain
+        name: "audit: hash-chain integrity"
+        entry: python scripts/audit/verify-chain.py --db docs/audit/audit.db
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: live-build-shellcheck
+        name: "shellcheck: config/hooks/**"
+        entry: shellcheck
+        language: system
+        types: [shell]
+        files: "^config/hooks/(live|normal)/.*"
+
+ci:
+  # Used when running pre-commit.ci hosted runner (optional)
+  autofix_prs: false
+  autoupdate_schedule: monthly
+  skip:
+    - audit-chain         # requires the DB to exist; skipped on autoupdate runs

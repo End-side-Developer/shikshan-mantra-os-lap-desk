@@ -1,0 +1,66 @@
+# policies/escalation-matrix.yml
+#
+# Who to ping when an agent's Ψ-recovery triggers. Used by the audit hook,
+# the agent-task-validate workflow, and Mergify queue-rejection rules.
+#
+# Values are GitHub team handles (without the @org/ prefix). If a team
+# is unreachable (escalated_after_minutes elapsed), fall back to the next.
+
+version: 1
+
+contacts:
+  default: "shikshan/maintainers"
+  security: "shikshan/security"
+  governance: "shikshan/governance"
+  devex: "shikshan/devex"
+  platform: "shikshan/platform"
+  release_managers: "shikshan/release-managers"
+  safety: "shikshan/safety"
+
+triggers:
+
+  budget_exceeded:
+    contacts: [default]
+    label: needs-human
+    escalated_after_minutes: 60
+    fallback_contacts: [governance]
+
+  protected_path_hit:
+    contacts: [security, governance]
+    label: protected-path-violation
+    escalated_after_minutes: 15
+    fallback_contacts: [default]
+    page_oncall: true
+
+  audit_chain_break:
+    contacts: [security]
+    label: security-incident
+    escalated_after_minutes: 0          # immediate
+    fallback_contacts: [governance, default]
+    page_oncall: true
+    open_issue_template: ".github/ISSUE_TEMPLATE/security-incident.yml"
+
+  test_failure_after_2_attempts:
+    contacts: [default]
+    label: needs-help
+    escalated_after_minutes: 120
+    fallback_contacts: []
+
+  signing_failure:
+    contacts: [security, release_managers]
+    label: signing-failure
+    escalated_after_minutes: 30
+    fallback_contacts: [default]
+
+  unknown_path_attempt:
+    # Path is in neither allowlist nor protected list — treat as protected
+    contacts: [governance]
+    label: unknown-path
+    escalated_after_minutes: 60
+    fallback_contacts: [default]
+
+# Oncall rotation pointer (managed in PagerDuty or equivalent;
+# the URL is informational, not a credential):
+oncall:
+  primary: "https://shikshan.pagerduty.example/schedules/PRIMARY"
+  secondary: "https://shikshan.pagerduty.example/schedules/SECONDARY"

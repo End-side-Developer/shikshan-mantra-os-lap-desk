@@ -1,0 +1,34 @@
+---
+# tests/fixtures/manifests/ai-literacy-basics.manifest.yml
+#
+# Sample VALID module manifest. Used by tests/integration/ to verify
+# schema validation, and as a template when authoring new modules.
+
+id: ai-literacy-basics
+version: 1.0.0
+title:
+  en: "AI Literacy Basics"
+  hi: "एआई साक्षरता मूल बातें"
+description:
+  en: "An introduction to what AI is, how it learns, and how to use it safely."
+  hi: "एआई क्या है, यह कैसे सीखता है, और इसका सुरक्षित उपयोग कैसे करें।"
+language: [en, hi]
+age_band: "9-12"
+difficulty: beginner
+prerequisites: []
+outcomes:
+  - en: "Identify what is and isn't AI"
+    hi: "पहचानें कि एआई क्या है और क्या नहीं"
+  - en: "Use a chatbot safely with consent"
+    hi: "सहमति के साथ चैटबॉट का सुरक्षित उपयोग करें"
+  - en: "Spot AI-generated images and text"
+    hi: "एआई-जनित छवियों और पाठ को पहचानें"
+content_type: html
+entrypoint: index.html
+required_apps:
+  - firefox-esr
+unlock_rules:
+  - kind: free
+license: CC-BY-SA-4.0
+checksum: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+signature: null

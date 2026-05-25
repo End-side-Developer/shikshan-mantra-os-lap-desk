@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "$comment": "Committed Claude Code settings for Shikshan Mantra OS. Per-developer overrides go in settings.local.json (gitignored). This file is in policies/protected-paths.yml deny: — changes require touches-policy two-team approval.",
+
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit",
+      "Write",
+      "TodoWrite",
+      "WebSearch",
+      "WebFetch",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout -b agent/SMO-*)",
+      "Bash(git add :*)",
+      "Bash(git commit -S:*)",
+      "Bash(git push origin agent/SMO-*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh issue view:*)",
+      "Bash(pre-commit run:*)",
+      "Bash(python scripts/audit/verify-chain.py:*)",
+      "Bash(python scripts/audit/append-entry.py:*)",
+      "Bash(python scripts/audit/export-jsonl.py:*)",
+      "Bash(python scripts/policy/check-protected-paths.py:*)",
+      "Bash(python scripts/policy/check-allowlist.py:*)",
+      "Bash(bash scripts/verify/verify-manifests.sh:*)",
+      "Bash(bash scripts/verify/verify-iso.sh:*)",
+      "Bash(bash scripts/build/build-iso.sh:*)",
+      "Bash(shellcheck:*)",
+      "Bash(yamllint:*)",
+      "Bash(ls:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git rebase -i:*)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit --amend:*)",
+      "Bash(git config --global:*)",
+      "Bash(sudo :*)",
+      "Bash(curl :* | sh:*)",
+      "Bash(curl :* | bash:*)",
+      "Bash(wget :* | sh:*)",
+      "Bash(wget :* | bash:*)",
+      "Edit(policies/**)",
+      "Edit(.github/workflows/**)",
+      "Edit(.github/rulesets/**)",
+      "Edit(.github/CODEOWNERS)",
+      "Edit(AGENTS.md)",
+      "Edit(AGENT_CARD.md)",
+      "Edit(LICENSE)",
+      "Edit(SECURITY.md)",
+      "Edit(scripts/audit/**)",
+      "Edit(scripts/verify/verify-slsa.sh)",
+      "Edit(scripts/policy/**)",
+      "Edit(config/bootloaders/**)",
+      "Edit(config/archives/*.key.*)",
+      "Edit(config/packages.chroot/**)",
+      "Edit(docs/audit/audit.db)",
+      "Edit(docs/audit/audit-log-spec.md)",
+      "Edit(docs/adr/0000-template.md)",
+      "Edit(docs/adr/0001-*.md)",
+      "Edit(docs/adr/0002-*.md)",
+      "Edit(.pre-commit-config.yaml)",
+      "Write(policies/**)",
+      "Write(.github/workflows/**)",
+      "Write(.github/rulesets/**)",
+      "Write(scripts/audit/**)",
+      "Write(scripts/policy/**)",
+      "Write(config/bootloaders/**)",
+      "Write(config/archives/*.key.*)",
+      "Write(docs/audit/audit.db)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-use/protected-paths.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-use/load-context.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-tool-use/audit-append.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop/finalize-task.sh"
+          }
+        ]
+      }
+    ]
+  },
+
+  "env": {
+    "SHIKSHAN_REPO_ROOT": "${CLAUDE_PROJECT_DIR}",
+    "SHIKSHAN_STRICT_MODE": "1"
+  },
+
+  "model": "claude-opus-4-7",
+
+  "outputStyle": "default"
+}

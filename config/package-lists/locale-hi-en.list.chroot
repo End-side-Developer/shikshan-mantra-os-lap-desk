@@ -1,0 +1,12 @@
+# config/package-lists/locale-hi-en.list.chroot
+# Hindi + English locale + IME for Hindi typing.
+
+locales
+locales-all
+keyboard-configuration
+
+# Input method (Devanagari typing)
+ibus
+ibus-m17n
+m17n-db
+m17n-contrib

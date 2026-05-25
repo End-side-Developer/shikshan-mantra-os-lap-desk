@@ -1,0 +1,109 @@
+---
+# .github/mergify.yml
+#
+# Auto-merge orchestration. Refuses to enqueue any PR that:
+#   - lacks all required-status-check passes
+#   - lacks 2 CODEOWNERS approvals when a sensitive label is applied
+#   - carries label `needs-human`, `needs-help`, `protected-path-violation`,
+#     `security-incident`, or `signing-failure`
+#
+# This file is in policies/protected-paths.yml deny: — touches-ci label
+# auto-applies; needs two-team approval (devex + security) to change.
+
+queue_rules:
+  - name: default
+    queue_conditions:
+      - "#approved-reviews-by>=1"
+      - "check-success=lint / yaml-shell-md"
+      - "check-success=validate / json-schema"
+      - "check-success=policy / protected-paths"
+      - "check-success=security / gitleaks"
+      - "check-success=security / commit-signatures"
+      - "check-success=lint / conventional-commits"
+      - "check-success=audit / chain-integrity"
+      - "check-success=agent / task-contract"
+      - "check-success=agent / budget"
+    merge_method: squash
+    merge_conditions:
+      - "#approved-reviews-by>=1"
+    update_method: rebase
+    speculative_checks: 2
+    batch_size: 3
+    batch_max_wait_time: 5min
+
+  - name: sensitive
+    queue_conditions:
+      - "#approved-reviews-by>=2"
+      - "#changes-requested-reviews-by=0"
+      - "branch-protection-review-decision=APPROVED"
+      - "check-success=lint / yaml-shell-md"
+      - "check-success=validate / json-schema"
+      - "check-success=policy / protected-paths"
+      - "check-success=security / gitleaks"
+      - "check-success=security / semgrep"
+      - "check-success=security / codeql"
+      - "check-success=security / commit-signatures"
+      - "check-success=audit / chain-integrity"
+    merge_method: merge
+    merge_conditions:
+      - "#approved-reviews-by>=2"
+    update_method: rebase
+    speculative_checks: 1
+    batch_size: 1
+
+pull_request_rules:
+
+  - name: refuse queue when needs-human label present
+    conditions:
+      - or:
+          - label=needs-human
+          - label=needs-help
+          - label=protected-path-violation
+          - label=security-incident
+          - label=signing-failure
+    actions:
+      comment:
+        message: |
+          This PR carries a blocking label. Mergify will not enqueue it
+          until the label is removed and the underlying issue is resolved.
+          See policies/escalation-matrix.yml for owning teams.
+
+  - name: enqueue default-flow PRs with automerge label
+    conditions:
+      - base=main
+      - label=automerge
+      - -label~=^touches-(bootloader|signing|policy|ci|audit|packages|safety-defaults)$
+    actions:
+      queue:
+        name: default
+
+  - name: enqueue sensitive PRs (two-team rule applies)
+    conditions:
+      - base=main
+      - label=automerge
+      - label~=^touches-(bootloader|signing|policy|ci|audit|packages|safety-defaults)$
+    actions:
+      queue:
+        name: sensitive
+
+  - name: warn when override label applied
+    conditions:
+      - label=allowlist-override
+    actions:
+      comment:
+        message: |
+          ⚠️ `allowlist-override` label applied. This PR will modify a
+          protected path. Two CODEOWNERS teams must approve before merge
+          (governance + security at minimum). All edits are audited.
+
+  - name: enforce single logical change (warn on large diffs)
+    conditions:
+      - "#files>40"
+    actions:
+      comment:
+        message: |
+          This PR changes more than 40 files. AGENTS.md §10 caps any single
+          task at 40 files. Either split this into multiple PRs or document
+          why a budget override is justified in the task contract.
+      label:
+        add: [oversized]

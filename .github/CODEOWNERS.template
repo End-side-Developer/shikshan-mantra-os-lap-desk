@@ -1,0 +1,90 @@
+# NOTE: This file's intended path is `.github/CODEOWNERS` (no extension).
+# The sandbox running this agent blocked direct writes to that exact filename
+# (CODEOWNERS is a sandbox-protected metadata file). Rename this file:
+#
+#     git mv .github/CODEOWNERS.template .github/CODEOWNERS
+#
+# and verify it parses with: `gh api repos/:owner/:repo/codeowners/errors`.
+
+# .github/CODEOWNERS
+#
+# Routes review requests by changed path. GitHub counts CODEOWNERS approval
+# per team — multi-team lines REQUIRE one approval per listed team.
+# Combined with `.github/rulesets/protected-paths.json` `required_reviewers: 2`,
+# sensitive lines below enforce the two-person two-team rule (AGENTS.md §10).
+#
+# This file is in policies/protected-paths.yml deny: — touches-policy label
+# auto-applies; needs two-team approval (governance + security) to change.
+
+# ---------------- Default owner ----------------
+*                                       @shikshan/maintainers
+
+# ---------------- Documentation ----------------
+/docs/                                  @shikshan/docs
+/docs/adr/                              @shikshan/governance @shikshan/maintainers
+/docs/architecture/                     @shikshan/maintainers
+/docs/security/                         @shikshan/security
+/docs/governance/                       @shikshan/governance
+/docs/runbooks/                         @shikshan/devex @shikshan/security
+/docs/audit/                            @shikshan/security @shikshan/governance
+/README.md                              @shikshan/maintainers
+/CONTRIBUTING.md                        @shikshan/maintainers @shikshan/governance
+/CHANGELOG.md                           @shikshan/maintainers
+
+# ---------------- Governance & policy (sensitive) ----------------
+/AGENTS.md                              @shikshan/governance @shikshan/security
+/AGENT_CARD.md                          @shikshan/governance @shikshan/security
+/CLAUDE.md                              @shikshan/governance @shikshan/devex
+/CODE_OF_CONDUCT.md                     @shikshan/governance
+/LICENSE                                @shikshan/governance @shikshan/maintainers
+/SECURITY.md                            @shikshan/security @shikshan/governance
+/policies/                              @shikshan/governance @shikshan/security
+
+# ---------------- CI & automation (sensitive) ----------------
+/.github/workflows/                     @shikshan/devex @shikshan/security
+/.github/rulesets/                      @shikshan/devex @shikshan/security
+/.github/CODEOWNERS                     @shikshan/governance @shikshan/security
+/.github/mergify.yml                    @shikshan/devex @shikshan/security
+/.github/renovate.json                  @shikshan/devex
+/.github/dependabot.yml                 @shikshan/devex
+/.github/copilot-instructions.md        @shikshan/governance @shikshan/devex
+/.pre-commit-config.yaml                @shikshan/devex @shikshan/security
+
+# ---------------- .claude/ (mixed) ----------------
+/.claude/settings.json                  @shikshan/governance @shikshan/security
+/.claude/hooks/                         @shikshan/security @shikshan/governance
+/.claude/agents/                        @shikshan/devex
+/.claude/skills/                        @shikshan/devex
+/.claude/commands/                      @shikshan/devex
+
+# ---------------- live-build (sensitive subsets) ----------------
+/auto/                                  @shikshan/platform @shikshan/security
+/config/bootloaders/                    @shikshan/platform @shikshan/security
+/config/archives/                       @shikshan/release-managers @shikshan/security
+/config/packages.chroot/                @shikshan/platform @shikshan/security
+/config/preseed/                        @shikshan/platform
+/config/package-lists/                  @shikshan/platform
+/config/hooks/                          @shikshan/platform
+/config/includes.chroot/                @shikshan/platform
+/config/includes.chroot/etc/firefox/    @shikshan/safety @shikshan/platform
+/config/includes.chroot/etc/shikshan/   @shikshan/safety @shikshan/platform
+
+# ---------------- Modules ----------------
+/modules/                               @shikshan/content
+/modules/catalogs/                      @shikshan/content @shikshan/security
+/modules/catalogs/schemas/              @shikshan/governance @shikshan/content
+/modules/core/                          @shikshan/content
+
+# ---------------- Scripts (sensitive subsets) ----------------
+/scripts/                               @shikshan/devex
+/scripts/audit/                         @shikshan/security @shikshan/governance
+/scripts/verify/verify-slsa.sh          @shikshan/security @shikshan/release-managers
+/scripts/policy/                        @shikshan/governance @shikshan/security
+
+# ---------------- Tests ----------------
+/tests/                                 @shikshan/devex
+/tests/qemu/                            @shikshan/devex @shikshan/platform
+
+# ---------------- Task queue (process-level) ----------------
+/tasks/schema/                          @shikshan/governance @shikshan/devex
+/tasks/                                 @shikshan/maintainers

@@ -1,0 +1,61 @@
+---
+name: "Security incident (internal)"
+description: "For maintainers responding to a detected incident (audit chain break, signing failure, protected-path violation). NOT for vulnerability reports — use SECURITY.md for those."
+title: "[security-incident] "
+labels: ["security-incident", "urgent", "do-not-merge"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow docs/security/incident-response.md. This issue auto-blocks
+        Mergify per .github/mergify.yml.
+
+  - type: dropdown
+    id: trigger
+    attributes:
+      label: Trigger
+      options:
+        - "audit-chain-break"
+        - "protected-path-violation"
+        - "signing-failure"
+        - "unknown-path-attempt"
+        - "budget-exceeded (suspicious pattern)"
+        - "other"
+    validations:
+      required: true
+
+  - type: input
+    id: detected_at
+    attributes:
+      label: Detected at (UTC, RFC3339)
+      placeholder: "2026-05-25T14:23:01Z"
+    validations:
+      required: true
+
+  - type: input
+    id: detected_by
+    attributes:
+      label: Detected by (workflow run URL or human handle)
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected
+    attributes:
+      label: Affected scope
+      placeholder: "branch / PR / commit SHA / audit row sequence_number"
+    validations:
+      required: true
+
+  - type: textarea
+    id: containment
+    attributes:
+      label: Containment actions taken
+    validations:
+      required: true
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Investigation timeline (append as you go)

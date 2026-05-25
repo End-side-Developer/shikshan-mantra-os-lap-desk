@@ -1,0 +1,97 @@
+---
+name: "Learning module proposal"
+description: "Propose a new first-party or community-catalog learning module."
+title: "[module] "
+labels: ["module", "content", "triage"]
+body:
+  - type: input
+    id: module_id
+    attributes:
+      label: Proposed module ID
+      description: "kebab-case, unique within the catalog (e.g., ai-literacy-basics)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: catalog
+    attributes:
+      label: Target catalog
+      options:
+        - "official (first-party, modules/core/)"
+        - "community"
+    validations:
+      required: true
+
+  - type: input
+    id: title_en
+    attributes:
+      label: Title (English)
+    validations:
+      required: true
+
+  - type: input
+    id: title_hi
+    attributes:
+      label: Title (Hindi)
+      description: "Required for parity"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: age_band
+    attributes:
+      label: Age band
+      options:
+        - "5-8"
+        - "9-12"
+        - "13-15"
+        - "16-18"
+        - "18+"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      options: ["beginner", "intermediate", "advanced"]
+    validations:
+      required: true
+
+  - type: input
+    id: license
+    attributes:
+      label: License (SPDX)
+      placeholder: "CC-BY-SA-4.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcomes
+    attributes:
+      label: Learning outcomes
+    validations:
+      required: true
+
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: Prerequisites (module IDs)
+      placeholder: "[]"
+
+  - type: textarea
+    id: content_summary
+    attributes:
+      label: Content summary
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: "Content is age-appropriate and meets school-safe defaults"
+          required: true
+        - label: "I have/will provide both Hindi and English content"
+          required: true
+        - label: "License is open-source compatible (no proprietary content)"
+          required: true

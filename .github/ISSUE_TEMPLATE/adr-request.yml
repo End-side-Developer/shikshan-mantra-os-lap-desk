@@ -1,0 +1,65 @@
+---
+name: "ADR request"
+description: "Propose an architectural decision. The maintainer-bot drafts docs/adr/NNNN-<slug>.md."
+title: "[adr] "
+labels: ["adr", "architecture", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when a change introduces, removes, or alters a public
+        interface, a build-time choice, or a security/safety default.
+        See docs/adr/0000-template.md for the MADR structure.
+
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      description: "Imperative present tense, e.g., 'Adopt cosign keyless signing for module catalogs'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Problem
+      description: "What forces are at play? Why now?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: drivers
+    attributes:
+      label: Decision drivers
+      placeholder: |
+        - reproducible builds
+        - low-RAM ceiling
+        - school-safe defaults
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options considered
+      description: "≥2 options. List pros/cons each."
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed decision
+    validations:
+      required: true
+
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      placeholder: |
+        Positive: ...
+        Negative: ...
+        Follow-up tasks: ...
+    validations:
+      required: true

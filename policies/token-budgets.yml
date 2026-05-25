@@ -1,0 +1,77 @@
+# policies/token-budgets.yml
+#
+# Hard caps that the agent harness enforces per task. A task contract
+# (tasks/schema/task.schema.yml) declares its R: block; the values there
+# MUST be <= the maxima declared in this file for the task `type`.
+#
+# The `agent-budget-check` workflow compares actual consumption (reported by
+# the agent in the PR body, signed via OIDC) against declared and against
+# this file. Exceeding any value moves the task to tasks/blocked/ and
+# applies label `needs-human`.
+
+version: 1
+
+defaults:
+  max_tokens: 200000
+  max_wall_minutes: 60
+  max_files_changed: 20
+  max_diff_lines: 800
+  max_retries_on_failure: 2
+
+types:
+  # Documentation-only tasks (ADR drafts, runbook updates, glossary)
+  docs:
+    max_tokens: 150000
+    max_wall_minutes: 45
+    max_files_changed: 10
+    max_diff_lines: 600
+
+  # Add or update tests
+  tests:
+    max_tokens: 250000
+    max_wall_minutes: 60
+    max_files_changed: 25
+    max_diff_lines: 1000
+
+  # New first-party module (manifest + content + tests + signed catalog entry)
+  module-add:
+    max_tokens: 400000
+    max_wall_minutes: 120
+    max_files_changed: 40
+    max_diff_lines: 1500
+
+  # live-build hook / package-list / includes.chroot changes
+  build-config:
+    max_tokens: 250000
+    max_wall_minutes: 90
+    max_files_changed: 15
+    max_diff_lines: 800
+
+  # ADR-only PR
+  adr:
+    max_tokens: 100000
+    max_wall_minutes: 30
+    max_files_changed: 1
+    max_diff_lines: 300
+
+  # Bugfix in scripts/build, scripts/dev, modules/core, tests
+  fix:
+    max_tokens: 200000
+    max_wall_minutes: 60
+    max_files_changed: 15
+    max_diff_lines: 600
+
+# Absolute ceilings — no task type may exceed these regardless of R:
+absolute_ceiling:
+  max_tokens: 400000
+  max_wall_minutes: 120
+  max_files_changed: 40
+  max_diff_lines: 1500
+  max_retries_on_failure: 2
+
+# When exceeded, take this action (Ψ recovery):
+on_exceed:
+  move_to: "tasks/blocked/"
+  apply_label: "needs-human"
+  audit_action: "budget-exceeded"
+  notify: "from policies/escalation-matrix.yml"

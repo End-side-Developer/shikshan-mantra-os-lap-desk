@@ -1,0 +1,73 @@
+---
+# .github/labeler.yml
+#
+# Used by .github/workflows/ci-labeler.yml (actions/labeler@v5) to auto-apply
+# sensitive-change labels based on changed files. Mirrors
+# policies/sensitive-change-labels.yml — keep these in sync; the policy file
+# is the source of truth.
+
+touches-bootloader:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "config/bootloaders/**"
+          - "auto/**"
+
+touches-signing:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "config/archives/*.key.*"
+          - "config/archives/*.auth.*"
+          - "docs/security/signing-policy.md"
+          - "scripts/verify/verify-slsa.sh"
+
+touches-policy:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "policies/**"
+          - ".github/CODEOWNERS"
+          - ".github/rulesets/**"
+          - "AGENTS.md"
+          - "AGENT_CARD.md"
+
+touches-ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/mergify.yml"
+          - ".github/renovate.json"
+          - ".pre-commit-config.yaml"
+
+touches-audit:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "scripts/audit/**"
+          - "docs/audit/**"
+
+touches-packages:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "config/packages.chroot/**"
+
+touches-safety-defaults:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "config/includes.chroot/etc/firefox/policies.json"
+          - "config/includes.chroot/etc/shikshan/policy.yml"
+          - "config/package-lists/safety-filtering.list.chroot"
+
+agent-task:
+  - head-branch: ["^agent/SMO-[0-9]+-.+"]
+
+human-pr:
+  - head-branch: ["^human/.+"]
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "*.md"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"

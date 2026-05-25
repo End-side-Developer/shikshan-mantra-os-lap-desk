@@ -1,0 +1,27 @@
+Shikshan Mantra OS
+Copyright (C) 2026 Shikshan Mantra OS contributors
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.html>.
+
+----
+
+The full GPL-3.0 license text is canonical at https://www.gnu.org/licenses/gpl-3.0.txt
+and SHALL be added verbatim to this file before the first tagged release.
+Tracked in tasks/open/SMO-0001-vendor-gpl-text.yml.
+
+Learning content under modules/ is governed by per-module manifests; each
+module declares its own SPDX license expression in its manifest `license`
+field. See modules/README.md.
+
+Third-party software shipped in the live image retains its upstream license.
+The SBOM at build time (CycloneDX) enumerates every package and its license.

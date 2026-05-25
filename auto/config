@@ -1,0 +1,75 @@
+#!/bin/sh
+# auto/config — declarative live-build configuration for Shikshan Mantra OS
+#
+# Invoked by `lb config` (via scripts/build/build-iso.sh in a clean container).
+# Per live-build(7), this script calls `lb config` with the project's locked
+# parameters. All choices below are tied to PLAN.md and ADR-0001.
+#
+# This file is in policies/agent-allowlist.yml `allow:` indirectly (auto/**
+# requires touches-bootloader two-team review per CODEOWNERS). Changes require
+# a matching ADR.
+
+set -eu
+
+# --- Distribution and architecture (ADR-0001) ---
+DISTRIBUTION="trixie"                # Debian 13.5
+ARCHITECTURES="amd64"                # 64-bit only for v1
+BOOTLOADER="syslinux,grub-efi"       # BIOS + UEFI
+
+# --- Image type ---
+IMAGE_TYPE="iso-hybrid"              # USB-stickable + DVD bootable
+
+# --- Repositories (pinned snapshot) ---
+# config/archives/debian.list.chroot pins to a specific snapshot.debian.org
+# timestamp for reproducibility. Override the upstream mirror to match.
+MIRROR_BOOTSTRAP="https://deb.debian.org/debian/"
+MIRROR_BINARY="https://deb.debian.org/debian/"
+MIRROR_CHROOT_SECURITY="https://security.debian.org/"
+MIRROR_BINARY_SECURITY="https://security.debian.org/"
+
+# --- Live system ---
+LB_LINUX_FLAVOURS="amd64"
+LB_INITRAMFS="live-boot"
+LB_UNION_FILESYSTEM="overlay"
+LB_BOOTAPPEND_LIVE="boot=live components quiet splash hostname=shikshan username=student locales=en_IN.UTF-8 keyboard-layouts=us"
+LB_BOOTAPPEND_LIVE_FAILSAFE="boot=live components nopersistent noeject ip=frommedia vga=normal"
+
+# --- Persistence support (encrypted on opt-in per admin policy) ---
+LB_PERSISTENCE="true"
+LB_PERSISTENCE_ENCRYPTION="luks"
+
+# --- Memory / kernel ---
+LB_LINUX_PACKAGES="linux-image-amd64"
+LB_FIRMWARE_CHROOT="true"
+
+# --- APT options ---
+LB_APT_RECOMMENDS="false"            # 2 GB RAM ceiling — no Recommends by default
+LB_APT_HTTP_PROXY=""
+LB_APT_PIPELINE="3"
+
+# --- Templates and branding ---
+LB_LINUX_FLAVOURS="amd64"
+LB_SYSLINUX_THEME="shikshan"         # config/bootloaders/isolinux uses this
+
+# --- Run lb config ---
+lb config noauto \
+    --distribution "$DISTRIBUTION" \
+    --architectures "$ARCHITECTURES" \
+    --bootloaders "$BOOTLOADER" \
+    --binary-images "$IMAGE_TYPE" \
+    --mirror-bootstrap "$MIRROR_BOOTSTRAP" \
+    --mirror-binary "$MIRROR_BINARY" \
+    --mirror-chroot-security "$MIRROR_CHROOT_SECURITY" \
+    --mirror-binary-security "$MIRROR_BINARY_SECURITY" \
+    --linux-flavours "$LB_LINUX_FLAVOURS" \
+    --linux-packages "$LB_LINUX_PACKAGES" \
+    --initramfs "$LB_INITRAMFS" \
+    --union-filesystem "$LB_UNION_FILESYSTEM" \
+    --bootappend-live "$LB_BOOTAPPEND_LIVE" \
+    --bootappend-live-failsafe "$LB_BOOTAPPEND_LIVE_FAILSAFE" \
+    --firmware-chroot "$LB_FIRMWARE_CHROOT" \
+    --apt-recommends "$LB_APT_RECOMMENDS" \
+    --apt-pipeline "$LB_APT_PIPELINE" \
+    --memtest none \
+    --debian-installer none \
+    "${@}"

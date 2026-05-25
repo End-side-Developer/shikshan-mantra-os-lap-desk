@@ -1,0 +1,4 @@
+# tasks/in-progress/
+# Currently-claimed tasks. Each file is owned by the agent that moved it
+# from tasks/open/. The agent-task-validate workflow enforces ownership
+# and scope.

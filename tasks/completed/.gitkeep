@@ -1,0 +1,4 @@
+# tasks/completed/
+# Immutable archive of merged tasks. Append-only per
+# policies/agent-allowlist.yml append_only:. Never edit existing files
+# here — they are the auditable history of agent work.

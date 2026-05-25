@@ -1,0 +1,74 @@
+---
+# tasks/examples/SMO-9001-add-module-manifest.yml
+#
+# REFERENCE TASK — do not claim. The 9000-series is reserved for examples.
+# Demonstrates a typical `module-add` task contract.
+
+id: SMO-9001
+title: "Add ai-literacy-basics module manifest and content stub"
+type: module-add
+linked_issue: "#1001"
+linked_adr: null                       # not architectural; uses existing module schema
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/core/ai-literacy-basics/**"
+    - "modules/catalogs/official.catalog.yml"    # to register the module
+    - "tests/integration/test_ai_literacy_basics.py"
+  context_docs:
+    - "AGENTS.md"
+    - "docs/architecture/module-system.md"
+    - "modules/catalogs/schemas/module.schema.json"
+    - "modules/catalogs/schemas/catalog.schema.json"
+  inputs:
+    module_id: "ai-literacy-basics"
+    age_band: "9-12"
+    difficulty: "beginner"
+    languages: ["en", "hi"]
+    license: "CC-BY-SA-4.0"
+
+O:
+  pr_url: null                          # set after PR open
+  tests_added:
+    - "tests/integration/test_ai_literacy_basics.py"
+  coverage_delta: 0.5                   # +0.5pp expected
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "All required-status-checks pass on the PR"
+  - "Module manifest validates against modules/catalogs/schemas/module.schema.json"
+  - "Catalog manifest validates against modules/catalogs/schemas/catalog.schema.json after registration"
+  - "Hindi and English content present for title, description, and ≥3 outcomes"
+  - "Integration test asserts manifest parse + checksum match"
+  - "No new lintian E:/W: lines"
+
+R:
+  max_tokens: 400000
+  max_wall_minutes: 120
+  max_files_changed: 25
+  max_diff_lines: 1200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "issue carries label `ready-for-agent`"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "audit chain verifies clean (verify-chain.py exit 0)"
+  - "modules/catalogs/official.catalog.yml is on main and signed"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/content"
+    - "shikshan/safety"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

@@ -1,0 +1,7 @@
+# config/package-lists/installer-calamares.list.chroot
+# Install-to-disk path from the live session. Preseed in config/preseed/.
+
+calamares
+calamares-settings-debian
+qml-module-qtquick-controls
+qml-module-qtquick-controls2

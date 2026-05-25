@@ -1,0 +1,40 @@
+# config/package-lists/desktop-lxqt.list.chroot
+# Default desktop environment for Shikshan Mantra OS. Optimized for 2 GB RAM.
+# ADR-0001 selected LXQt; future revisions reflect kernel/package changes only.
+
+# Display server + base
+xserver-xorg
+xinit
+lightdm
+
+# LXQt core
+lxqt-core
+lxqt-config
+lxqt-policykit
+lxqt-powermanagement
+lxqt-sudo
+lxqt-themes
+qterminal
+pcmanfm-qt
+featherpad
+
+# Networking
+network-manager
+network-manager-gnome
+
+# Fonts (Hindi + English parity required)
+fonts-noto-core
+fonts-noto-cjk
+fonts-noto-color-emoji
+fonts-deva
+fonts-mukti
+fonts-lohit-deva
+
+# Sound
+pulseaudio
+pavucontrol-qt
+
+# Power + thermal on laptops
+tlp
+acpi
+acpi-support

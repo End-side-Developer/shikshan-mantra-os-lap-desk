@@ -1,0 +1,26 @@
+---
+# tests/fixtures/manifests/invalid-no-hindi-title.manifest.yml
+#
+# Sample INVALID module manifest — missing the Hindi title. Used by a
+# negative test to confirm the schema rejects Hi/En parity violations.
+
+id: ai-literacy-basics
+version: 1.0.0
+title:
+  en: "AI Literacy Basics"
+  # hi: intentionally missing
+language: [en, hi]
+age_band: "9-12"
+difficulty: beginner
+prerequisites: []
+outcomes:
+  - en: "Identify what is and isn't AI"
+    hi: "पहचानें कि एआई क्या है और क्या नहीं"
+content_type: html
+entrypoint: index.html
+required_apps: []
+unlock_rules:
+  - kind: free
+license: CC-BY-SA-4.0
+checksum: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+signature: null

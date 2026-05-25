@@ -1,0 +1,18 @@
+---
+# modules/catalogs/official.catalog.yml
+#
+# First-party signed catalog. Modules listed here are first-party content
+# under modules/core/<id>/. Signed at release time by release-cosign-sign.yml.
+#
+# Adding a module to this file applies the `touches-signing`-adjacent
+# review (content + security teams) per CODEOWNERS.
+
+catalog_id: shikshan/official
+publisher: "Shikshan Mantra OS"
+trust_level: official
+update_url: null    # set at first release; current catalog is the in-repo file
+schema_version: 1
+
+modules: []         # populated as modules under modules/core/ ship
+
+signature: null     # populated by release-cosign-sign.yml

@@ -1,0 +1,54 @@
+# Normalize line endings to LF for text files
+*           text=auto eol=lf
+
+# Explicit text types
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.json      text eol=lf
+*.py        text eol=lf
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.list      text eol=lf
+*.hook      text eol=lf
+*.hook.chroot   text eol=lf
+*.hook.binary   text eol=lf
+*.list.chroot   text eol=lf
+*.list.binary   text eol=lf
+*.pref      text eol=lf
+*.toml      text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+*.conf      text eol=lf
+Makefile    text eol=lf
+Dockerfile  text eol=lf
+
+# Lockfiles and generated files — prefer no-merge / ours strategy
+package-lock.json   merge=ours linguist-generated=true
+yarn.lock           merge=ours linguist-generated=true
+
+# Binary types
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.deb       binary
+*.iso       binary filter=lfs diff=lfs merge=lfs -text
+*.img       binary filter=lfs diff=lfs merge=lfs -text
+*.squashfs  binary filter=lfs diff=lfs merge=lfs -text
+*.db        binary
+
+# Audit database — binary, mutated only via scripts/audit/append-entry.py
+docs/audit/audit.db   binary -diff -merge
+
+# Signing keys
+*.key       binary
+*.key.*     binary
+*.crt       binary
+*.pem       text
+
+# Linguist hints
+docs/**     linguist-documentation
+tests/fixtures/**   linguist-vendored
