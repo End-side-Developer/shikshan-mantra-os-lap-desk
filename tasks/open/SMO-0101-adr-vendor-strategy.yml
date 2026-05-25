@@ -1,0 +1,82 @@
+---
+# tasks/open/SMO-0101-adr-vendor-strategy.yml
+#
+# Phase-1 leading task: produce ADR-0003 establishing the vendor strategy.
+# Source plan: finalised by planner subagent on 2026-05-25.
+# Locked decision: manifest-pinned + gitignored clones + copy-with-attribution.
+
+id: SMO-0101
+title: "Write ADR-0003 vendor strategy (manifest + gitignored clones)"
+type: adr
+linked_adr: "docs/adr/0003-vendor-strategy.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0003-vendor-strategy.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "BOOTSTRAP.md"
+    - "docs/adr/README.md"
+    - "docs/adr/0000-template.md"
+    - "policies/protected-paths.yml"
+    - "policies/agent-allowlist.yml"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    adr_number: "0003"
+    slug: "vendor-strategy"
+    locked_decision: "manifest-pinned + gitignored clones + copy-with-attribution"
+    rejected_alternatives:
+      - "git-submodules"
+      - "git-subtrees"
+      - "git-LFS"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0003-vendor-strategy.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md structure exactly (MADR 3.x sections preserved)"
+  - "Status frontmatter is `proposed` with today's date"
+  - "Considered Options section enumerates: git-submodule, git-subtree, git-LFS, manifest+gitignored"
+  - "Decision Outcome names `manifest+gitignored clones + copy-with-attribution` as chosen, with one-sentence justification tied to audit-chain hermeticity and SBOM self-containment"
+  - "Consequences section enumerates supply-chain, SBOM, audit-trail, and rollback implications (at least 4 bullets)"
+  - "Supply-chain and audit implications section cross-references the `Source-Upstream:` and `Source-License:` commit-trailer convention"
+  - "Rollback plan section specifies how the chosen vendor PR would be reverted"
+  - "ADR cross-links policies/protected-paths.yml `vendor/**` deny entry and policies/agent-allowlist.yml `vendor/MANIFEST.yml` allow entry"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "docs/adr/0000-template.md exists on the working branch"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "ADR number 0003 not yet allocated on main"
+  - "Phase 0 BOOTSTRAP for ADR template is complete (this task does NOT depend on 0001 or 0002 being seeded)"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/governance"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
