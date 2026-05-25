@@ -80,3 +80,9 @@ labels:
       - two-person
       - team:safety
       - team:platform
+
+  - name: vendor-pin-update
+    paths:
+      - "vendor/MANIFEST.yml"
+    requires:
+      - team:security

@@ -60,6 +60,14 @@ allow:
   - "scripts/build/**"
   - "scripts/dev/**"
 
+  # Vendored upstream sources — manifest + README only.
+  # Clone subdirectories (vendor/<name>/) remain denied by
+  # policies/protected-paths.yml. Pin updates to MANIFEST.yml require the
+  # `vendor-pin-update` label per policies/sensitive-change-labels.yml.
+  - "vendor/MANIFEST.yml"
+  - "vendor/README.md"
+  - "vendor/.gitkeep"
+
   # .claude scaffold the agent may iterate on (subagents, skills, commands)
   - ".claude/agents/**"
   - ".claude/skills/**"

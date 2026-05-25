@@ -85,3 +85,11 @@ credentials/
 *.vmdk
 tests/qemu/.cache/
 tests/qemu/logs/
+
+# Vendored upstream sources (per docs/adr/0003-vendor-strategy.md)
+# Clones are materialised locally by scripts/dev/vendor-sync.py; only the
+# manifest, README, and .gitkeep are tracked.
+vendor/*
+!vendor/MANIFEST.yml
+!vendor/README.md
+!vendor/.gitkeep
