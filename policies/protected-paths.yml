@@ -9,6 +9,11 @@
 # reviewers from 2 distinct CODEOWNERS teams. The override is logged into
 # docs/audit/audit.db with action="override".
 #
+# Phase-3 solo-maintainer note: while the org has no teams, a PR may instead
+# carry both `allowlist-override` AND `solo-maintainer-override` labels with
+# the solo maintainer's self-approval. See CLAUDE.md "Phase-3 solo-maintainer
+# relaxation". Revert when contributors join.
+#
 # Changing THIS file is itself protected — it appears in `deny:` below.
 
 version: 1
@@ -72,8 +77,18 @@ sensitive_review_required: 2
 # Enforced by GitHub's per-team counting of CODEOWNERS satisfaction.
 sensitive_codeowners_teams: 2
 
+# Phase-3 solo-maintainer override: when org has no teams, the solo maintainer
+# may self-approve a PR carrying `allowlist-override` + `solo-maintainer-override`.
+# This relaxes sensitive_codeowners_teams from 2 to 1 for that PR only.
+# Revert to teams when contributors join.
+solo_maintainer_override:
+  enabled: true
+  label: solo-maintainer-override
+  required_self_approval: true
+
 # Labels that, when present on a PR, signal an override path is active.
 # Each label is paired with extra checks in policies/sensitive-change-labels.yml.
 override_labels:
   - allowlist-override
   - emergency-fix
+  - solo-maintainer-override
