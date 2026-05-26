@@ -1,0 +1,75 @@
+---
+# tasks/open/SMO-0200-allowlist-phase2-paths.yml
+#
+# Phase-2 unblocker: add the three Phase-2 paths to the agent allowlist so the
+# downstream SMO-0202 / SMO-0203 / SMO-0204 builders can run as claude-code.
+#
+# This task is `agent: human` because it edits policies/** (deny-listed).
+# Token budgets do not apply to human-authored PRs; rulesets + CODEOWNERS govern.
+
+id: SMO-0200
+title: "Allowlist pyproject.toml, scripts/verify/verify-iso.sh, releases/** for Phase 2"
+type: adr
+linked_adr: null
+agent: human
+
+I:
+  files_in_scope:
+    - "policies/agent-allowlist.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "policies/protected-paths.yml"
+    - "policies/agent-allowlist.yml"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    new_allow_globs:
+      - "pyproject.toml"
+      - "scripts/verify/verify-iso.sh"
+      - "releases/**"
+    rationale: "Unblock Phase-2 agent tasks: SMO-0202 (releases/README.md), SMO-0203 (pyproject.toml), SMO-0204 (verify-iso.sh edit)"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "policies/agent-allowlist.yml allow: contains `pyproject.toml`"
+  - "policies/agent-allowlist.yml allow: contains `scripts/verify/verify-iso.sh`"
+  - "policies/agent-allowlist.yml allow: contains `releases/**`"
+  - "No other path added or removed from allow"
+  - "scripts/verify/verify-slsa.sh is NOT added to allow (must remain protected)"
+  - "PR carries labels `allowlist-override` AND `touches-policy`"
+  - "PR has 2 distinct human reviewers from 2 distinct CODEOWNERS teams (governance + security)"
+  - "Override entry written to docs/audit/audit.db with action=override on merge"
+
+R:
+  max_tokens: 50000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 30
+
+T:
+  stale_after_hours: 168
+
+preconditions:
+  - "Phase 1 (SMO-0101 through SMO-0106) merged on main"
+  - "PR opener applies labels `allowlist-override` and `touches-policy`"
+  - "Two CODEOWNERS teams (governance + security) acknowledge override"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/governance"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
