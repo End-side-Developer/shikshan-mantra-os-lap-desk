@@ -1,0 +1,80 @@
+---
+# tasks/open/SMO-0300-allowlist-phase3-paths.yml
+#
+# Phase-3 unblocker: add docs/runbooks/** (already in allow indirectly via
+# docs/runbooks/**) and explicitly confirm tests/qemu/** stays under tests/**.
+# Adds `auto/**` to the exception list: it remains in deny, but a NEW deny
+# entry `config/bootloaders/**` already covers our bootloader assets — no
+# allowlist for auto/** is permitted; flagged here so the human reviewer is
+# aware that SMO-0303 + SMO-0306 (auto/build half) must ride `allowlist-override`.
+
+id: SMO-0300
+title: "Confirm Phase-3 path coverage in allowlist; flag protected auto/** edits as override-only"
+type: adr
+linked_adr: null
+agent: human
+
+I:
+  files_in_scope:
+    - "policies/agent-allowlist.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "policies/protected-paths.yml"
+    - "policies/agent-allowlist.yml"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    confirmed_paths_already_allowed:
+      - "tests/qemu/**         (under tests/**)"
+      - "config/hooks/live/**  (already allowed)"
+      - "config/hooks/normal/** (already allowed)"
+      - "config/package-lists/*.list.chroot (already allowed)"
+      - "config/includes.chroot/etc/shikshan/** (already allowed)"
+      - "docs/adr/**           (already allowed)"
+      - "docs/runbooks/**      (already allowed)"
+    new_allow_globs: []
+    paths_explicitly_kept_protected:
+      - "auto/**                (deny via touches-bootloader; SMO-0303 + auto/build half of SMO-0306 must use allowlist-override)"
+      - ".github/workflows/**   (SMO-0309 + SMO-0310 must use allowlist-override + touches-ci)"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "policies/agent-allowlist.yml is unchanged OR adds zero new globs (this is a confirmation/no-op PR; if no edit needed, close with a CONTRIBUTING note instead)"
+  - "PR body lists the Phase-3 paths and confirms each is already covered or intentionally kept under deny"
+  - "PR body explicitly names SMO-0303, SMO-0306 (auto/build half), SMO-0309, SMO-0310 as requiring `allowlist-override`"
+  - "If any change is made, PR carries labels `allowlist-override` AND `touches-policy`"
+  - "If any change is made, PR has 2 distinct human reviewers from 2 distinct CODEOWNERS teams (governance + security)"
+  - "If any change is made, override entry written to docs/audit/audit.db with action=override on merge"
+
+R:
+  max_tokens: 30000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 20
+
+T:
+  stale_after_hours: 168
+
+preconditions:
+  - "Phase 2 (SMO-0200..0204) merged on main"
+  - "PR opener applies labels `allowlist-override` and `touches-policy` if any edit is made"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/governance"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

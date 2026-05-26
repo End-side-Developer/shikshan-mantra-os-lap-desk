@@ -1,0 +1,86 @@
+---
+# tasks/open/SMO-0306-build-iso-to-releases.yml
+#
+# Bring scripts/build/build-iso.sh into compliance with ADR-0006: it currently
+# writes to artifacts/, but ADR-0006 + SMO-0204 mandate releases/. The companion
+# auto/build patch is human-only (deny via touches-bootloader). This task is
+# split into TWO parts but tracked as ONE logical change per AGENTS.md §5; the
+# agent PR carries the script change and the human PR (described below) lands
+# the auto/build patch first.
+
+id: SMO-0306
+title: "Wire build-iso.sh + auto/build to write releases/<bundle>.iso with canonical naming"
+type: build-config
+linked_adr: "docs/adr/0006-release-artifact-layout.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "scripts/build/build-iso.sh"
+    - "tests/integration/test_build_iso_resolves_releases_dir.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0006-release-artifact-layout.md"
+    - "docs/adr/0007-live-build-config-flags.md"
+    - "releases/README.md"
+    - "auto/build"
+    - "scripts/build/build-iso.sh"
+    - "scripts/build/sbom-generate.sh"
+    - "scripts/verify/verify-iso.sh"
+    - "tests/integration/test_release_bundle_layout.sh"
+  inputs:
+    bundle_basename_pattern: "shikshan-mantra-os-<version>-<arch>"
+    version_source: "VERSION env var, defaulting to `0.0.0-dev+$(git rev-parse --short HEAD)`"
+    arch_default: "amd64"
+    releases_dir_env: "RELEASES_DIR"
+    releases_dir_default: "releases"
+    auto_build_patch_owner: "human (SMO-0306b — separate PR with touches-bootloader + allowlist-override)"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/integration/test_build_iso_resolves_releases_dir.sh"
+  coverage_delta: 0.3
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "scripts/build/build-iso.sh derives BUNDLE_BASE = `shikshan-mantra-os-${VERSION}-${ARCH}` from env-with-defaults"
+  - "scripts/build/build-iso.sh writes the final ISO to `${RELEASES_DIR:-releases}/${BUNDLE_BASE}.iso` (moving from any prior path)"
+  - "scripts/build/build-iso.sh computes `${BUNDLE_BASE}.iso.sha256` and `${BUNDLE_BASE}.iso.sha512` next to the ISO"
+  - "scripts/build/build-iso.sh invokes scripts/build/sbom-generate.sh to produce cdx.json + spdx.json companions in the same releases/ dir"
+  - "scripts/build/build-iso.sh writes a MANIFEST.txt listing every file in the bundle with its SHA-256"
+  - "scripts/build/build-iso.sh on success runs `scripts/verify/verify-iso.sh ${BUNDLE_BASE}.iso` and propagates its exit code"
+  - "tests/integration/test_build_iso_resolves_releases_dir.sh mocks the container runtime (PATH-prepends a fake docker/podman that creates a fake binary.hybrid.iso) and asserts the resulting bundle path is `<RELEASES_DIR>/<BUNDLE_BASE>.iso` with sha256 + sha512 + MANIFEST.txt next to it"
+  - "scripts/build/build-iso.sh passes `shellcheck` with no new warnings"
+  - "PR body explicitly notes that the auto/build half (deny-listed) is filed as a separate human PR SMO-0306b and links it; the agent PR is no-op until the auto/build half merges"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 200000
+  max_wall_minutes: 90
+  max_files_changed: 2
+  max_diff_lines: 400
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0204 (verify-iso.sh + sbom-generate.sh on releases/) merged on main"
+  - "Companion human PR SMO-0306b (auto/build move from artifacts/ to releases/) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/release-managers"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

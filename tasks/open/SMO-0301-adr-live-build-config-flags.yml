@@ -1,0 +1,105 @@
+---
+# tasks/open/SMO-0301-adr-live-build-config-flags.yml
+#
+# Phase-3 leading task: ADR-0007 documenting the locked `lb config` flag set.
+# ADR-0001 (the seed) commits to live-build at a high level but does NOT
+# enumerate the specific flags — auto/config has been written without an
+# explicit decision record covering binary-images, persistence encryption,
+# bootappend, debian-installer disposition, kernel flavor, etc.
+
+id: SMO-0301
+title: "Write ADR-0007 locked lb config flag set (distribution, mirrors, bootloader, persistence, apt)"
+type: adr
+linked_adr: "docs/adr/0007-live-build-config-flags.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0007-live-build-config-flags.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0001-debian-live-build.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "docs/adr/0006-release-artifact-layout.md"
+    - "auto/config"
+    - "auto/build"
+    - "config/archives/debian.list.chroot"
+    - "config/package-lists/desktop-lxqt.list.chroot"
+    - "config/package-lists/desktop-icewm-rescue.list.chroot"
+  inputs:
+    adr_number: "0007"
+    slug: "live-build-config-flags"
+    locked_decision: "Phase-3 lb config flag set is: --distribution trixie, --architectures amd64, --bootloaders syslinux,grub-efi, --binary-images iso-hybrid, snapshot.debian.org mirror via config/archives/debian.list.chroot, --debian-installer none (Calamares replaces it), --initramfs live-boot, --union-filesystem overlay, --apt-recommends false, --memtest none, persistence with luks"
+    flags_to_document:
+      - "--distribution trixie  (Debian 13.5)"
+      - "--architectures amd64  (v1 is 64-bit only)"
+      - "--bootloaders syslinux,grub-efi  (BIOS + UEFI)"
+      - "--binary-images iso-hybrid  (USB-stickable + DVD bootable)"
+      - "--debian-installer none  (replaced by Calamares from the live session)"
+      - "--initramfs live-boot"
+      - "--union-filesystem overlay"
+      - "--apt-recommends false  (2 GB RAM ceiling)"
+      - "--memtest none"
+      - "--linux-flavours amd64, --linux-packages linux-image-amd64"
+      - "--firmware-chroot true  (non-free-firmware allowed for hardware support; gated by debian.list.chroot)"
+      - "LB_PERSISTENCE=true with LB_PERSISTENCE_ENCRYPTION=luks"
+      - "LB_BOOTAPPEND_LIVE includes locales=en_IN.UTF-8 keyboard-layouts=us hostname=shikshan username=student"
+      - "Mirror: snapshot.debian.org pin (delegated to config/archives/debian.list.chroot under touches-signing)"
+    sources_to_cite:
+      - "https://live-team.pages.debian.net/live-manual/html/live-manual/examples.en.html"
+      - "https://manpages.debian.org/bookworm/live-build/lb_config.1.en.html"
+      - "https://manpages.debian.org/bookworm/live-build/live-build.7.en.html"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0007-live-build-config-flags.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.x) — frontmatter status=proposed, today's date, decision-makers @shikshan/platform @shikshan/security"
+  - "Context section names ADR-0001 as the high-level decision and explains why a sub-ADR is needed (auto/config has been authored without a record of which lb-config flags are locked)"
+  - "Decision Outcome section reproduces the exact flag list from inputs.flags_to_document, in the same form `lb config` accepts"
+  - "Considered Options section enumerates at least 3 alternatives for the apt-recommends choice (true / false / per-task-list); names false as chosen for 2 GB RAM ceiling"
+  - "Considered Options section enumerates at least 3 alternatives for debian-installer disposition (none / live / true); names `none` as chosen with rationale Calamares replaces d-i in the live session"
+  - "Considered Options section enumerates at least 3 alternatives for binary-images (iso, iso-hybrid, hdd); names iso-hybrid as chosen"
+  - "Consequences section has >=5 bullets covering: 2 GB RAM impact, reproducibility (snapshot pin), UEFI+BIOS dual-boot surface, persistence-encryption default-on, no debian-installer fallback"
+  - "Confirmation section names the tests that validate the flag set: tests/smoke/test_auto_config_flags.sh (to be added in SMO-0303) AND tests/qemu/boot-{bios,uefi}.sh"
+  - "Rollback plan describes how to revert (auto/config diff + restore previous flag set + supersede ADR-0007)"
+  - "ADR cross-references SMO-0303 (auto/config remediation) and SMO-0304 (package list refresh)"
+  - "ADR explicitly states that mirror choice is delegated to ADR-0001 + config/archives/debian.list.chroot (touches-signing) and is OUT OF SCOPE for ADR-0007"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "Phase 2 (SMO-0200..0204) merged on main"
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0007 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

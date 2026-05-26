@@ -1,0 +1,78 @@
+---
+# tasks/open/SMO-0307-qemu-resolve-releases.yml
+#
+# tests/qemu/boot-{bios,uefi}.sh accept a bare ISO path. With releases/ as the
+# canonical output, they should also accept a bare bundle basename and resolve
+# it under ${RELEASES_DIR:-releases}/, and should call verify-iso.sh first to
+# refuse to boot an unverifiable bundle.
+
+id: SMO-0307
+title: "tests/qemu/boot-{bios,uefi}.sh resolve via releases/ and call verify-iso.sh first"
+type: tests
+linked_adr: "docs/adr/0008-qemu-smoke-criteria.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "tests/qemu/boot-bios.sh"
+    - "tests/qemu/boot-uefi.sh"
+    - "tests/qemu/README.md"
+    - "tests/integration/test_qemu_scripts_resolve_releases.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0006-release-artifact-layout.md"
+    - "docs/adr/0008-qemu-smoke-criteria.md"
+    - "tests/qemu/boot-bios.sh"
+    - "tests/qemu/boot-uefi.sh"
+    - "scripts/verify/verify-iso.sh"
+    - "tests/integration/test_release_bundle_layout.sh"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/integration/test_qemu_scripts_resolve_releases.sh"
+  coverage_delta: 0.2
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "boot-bios.sh accepts either `<releases>/<bundle>.iso` or a bare `<bundle>.iso` (then resolves under `${RELEASES_DIR:-releases}/`)"
+  - "boot-uefi.sh accepts the same forms"
+  - "Both scripts invoke `scripts/verify/verify-iso.sh <iso>` before launching QEMU; non-zero from verify-iso.sh aborts the boot with exit 4 (new code) and a `[qemu-*] verify-iso failed` line"
+  - "Both scripts keep the success regex `lightdm.*autologin|shikshan.local login` from ADR-0008"
+  - "Both scripts keep the 540s deadline from ADR-0008"
+  - "Both scripts keep -m 2048 (2 GB ceiling per ADR-0008)"
+  - "tests/integration/test_qemu_scripts_resolve_releases.sh stubs `qemu-system-x86_64` via PATH-prepend, creates a fake bundle in a temp RELEASES_DIR (full companions), asserts both scripts resolve correctly and reach the (mocked) qemu launch with the right -cdrom arg"
+  - "tests/integration/test_qemu_scripts_resolve_releases.sh also asserts that deleting MANIFEST.txt causes both scripts to exit 4 BEFORE invoking the stubbed qemu"
+  - "Both scripts pass `shellcheck` with no new warnings"
+  - "tests/qemu/README.md is updated to reflect the new resolution behavior and the new exit code 4 (verify-iso failure)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 200000
+  max_wall_minutes: 60
+  max_files_changed: 4
+  max_diff_lines: 400
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0302 (ADR-0008) merged on main"
+  - "SMO-0306 (releases/ wiring) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

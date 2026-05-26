@@ -1,0 +1,80 @@
+---
+# tasks/open/SMO-0309-ci-iso-build-workflow.yml
+#
+# `.github/workflows/**` is in policies/protected-paths.yml#deny. This task is
+# human-only, requires allowlist-override + touches-ci label + 2 reviewers from
+# 2 distinct teams (devex + security per sensitive-change-labels.yml#touches-ci).
+
+id: SMO-0309
+title: "Author ci-iso-build.yml: clean-container lb build + verify-iso + upload bundle (human override)"
+type: build-config
+linked_adr: "docs/adr/0007-live-build-config-flags.md"
+agent: human
+
+I:
+  files_in_scope:
+    - ".github/workflows/ci-iso-build.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0001-debian-live-build.md"
+    - "docs/adr/0006-release-artifact-layout.md"
+    - "docs/adr/0007-live-build-config-flags.md"
+    - "scripts/build/build-iso.sh"
+    - "scripts/build/sbom-generate.sh"
+    - "scripts/verify/verify-iso.sh"
+    - "auto/build"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    runner: "ubuntu-22.04 (privileged container; live-build needs it)"
+    cache_paths: [".build/cache"]
+    artifact_retention_days: 7
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - ".github/workflows/ci-iso-build.yml triggers on pull_request to main and on push to main; opt-in workflow_dispatch is also supported"
+  - "Job uses ubuntu-22.04 runner with privileged container for live-build"
+  - "Job installs docker (preinstalled on GH runners), then runs `bash scripts/build/build-iso.sh`"
+  - "Job step runs `bash scripts/verify/verify-iso.sh ${RELEASES_DIR}/<bundle>.iso` and fails on non-zero"
+  - "Job uploads the entire releases/ directory as an actions artifact named `shikshan-mantra-os-${{ github.sha }}-bundle` with retention_days=7"
+  - "Workflow has a `concurrency` group `iso-build-${{ github.ref }}` with cancel-in-progress: true"
+  - "Workflow declares `permissions: contents: read, id-token: write` (id-token for future cosign keyless step)"
+  - "Workflow is registered as a required status check via .github/rulesets/main-branch.json (separate human PR if needed; note in PR body)"
+  - "PR carries labels `allowlist-override` AND `touches-ci`"
+  - "PR has 2 distinct human reviewers from @shikshan/devex AND @shikshan/security"
+  - "Override entry written to docs/audit/audit.db with action=override on merge"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 60
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 168
+
+preconditions:
+  - "SMO-0306 (releases/ wiring) merged on main"
+  - "SMO-0308 (qemu orchestrator) merged on main"
+  - "PR opener applies labels `allowlist-override` and `touches-ci`"
+  - "Two human reviewers from @shikshan/devex AND @shikshan/security acknowledge override"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
