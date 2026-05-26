@@ -22,9 +22,12 @@ IMAGE_TYPE="iso-hybrid"              # USB-stickable + DVD bootable
 # --- Repositories (pinned snapshot) ---
 # config/archives/debian.list.chroot pins to a specific snapshot.debian.org
 # timestamp for reproducibility. Override the upstream mirror to match.
-MIRROR_BOOTSTRAP="https://deb.debian.org/debian/"
+# Bootstrap uses HTTP (not HTTPS): debootstrap verifies via GPG signatures,
+# and HTTPS via debootstrap occasionally fails inside CI containers (no TLS
+# trust store for the bootstrap stage's wget). Downstream apt still uses HTTPS.
+MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"
 MIRROR_BINARY="https://deb.debian.org/debian/"
-MIRROR_CHROOT_SECURITY="https://security.debian.org/"
+MIRROR_CHROOT_SECURITY="http://security.debian.org/"
 MIRROR_BINARY_SECURITY="https://security.debian.org/"
 
 # --- Live system ---
