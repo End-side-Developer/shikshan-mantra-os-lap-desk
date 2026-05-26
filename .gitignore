@@ -24,6 +24,11 @@ out/
 dist/
 build/
 
+# Releases (output bundle) — see docs/adr/0006-release-artifact-layout.md
+releases/*
+!releases/README.md
+!releases/.gitkeep
+
 # SBOM / scan artifacts (kept in artifacts/, not in repo root)
 *.cdx.json
 *.cdx.xml
