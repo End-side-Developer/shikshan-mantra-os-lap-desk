@@ -48,8 +48,7 @@ LB_APT_HTTP_PROXY=""
 LB_APT_PIPELINE="3"
 
 # --- Templates and branding ---
-LB_LINUX_FLAVOURS="amd64"
-LB_SYSLINUX_THEME="shikshan"         # config/bootloaders/isolinux uses this
+# LB_SYSLINUX_THEME deferred to Phase-8 SMO-0061 (bootloader assets not yet created)
 
 # --- Run lb config ---
 lb config noauto \
@@ -72,4 +71,6 @@ lb config noauto \
     --apt-pipeline "$LB_APT_PIPELINE" \
     --memtest none \
     --debian-installer none \
+    --persistence true \
+    --persistence-encryption luks \
     "${@}"
