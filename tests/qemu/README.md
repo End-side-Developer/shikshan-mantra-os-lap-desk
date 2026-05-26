@@ -11,21 +11,67 @@ End-to-end boot smoke tests for the built ISO. Used by `.github/workflows/ci-qem
 | `filtering.sh` | `e2e / web-filtering` | (Phase 8 task SMO-0092) DNS/proxy block tests |
 | `module-launch.sh` | `e2e / module-launch` | (Phase 8 task SMO-0093) Module launcher + Kolibri offline |
 
+## Invocation forms
+
+Both `boot-bios.sh` and `boot-uefi.sh` accept two argument forms:
+
+```bash
+# Full path (any directory):
+bash tests/qemu/boot-bios.sh path/to/shikshan-mantra-os-1.2.3.iso
+
+# Bare bundle basename (resolved under RELEASES_DIR, default: releases/):
+bash tests/qemu/boot-bios.sh shikshan-mantra-os-1.2.3.iso
+```
+
+The bare-basename form is the primary path when using the canonical `releases/` layout produced by `scripts/build/build-iso.sh`.
+
+## Pre-flight verification
+
+Before launching QEMU, each script calls `scripts/verify/verify-iso.sh <iso>`. The verification checks:
+
+- All companion artifacts present (`.sha256`, `.sha512`, `.cdx.json`, `.spdx.json`,
+  `.intoto.jsonl`, `.intoto.jsonl.sig`, `MANIFEST.txt`)
+- SHA-256 and SHA-512 hashes match
+
+If verification fails the script exits **4** (see exit code table below) without invoking QEMU.
+
 ## Locally
 
 ```bash
 sudo apt install qemu-system-x86 ovmf
 bash scripts/build/build-iso.sh
-bash tests/qemu/boot-bios.sh artifacts/shikshan.iso
-bash tests/qemu/boot-uefi.sh artifacts/shikshan.iso
+# Using canonical releases/ layout:
+bash tests/qemu/boot-bios.sh shikshan-mantra-os-1.2.3.iso
+bash tests/qemu/boot-uefi.sh shikshan-mantra-os-1.2.3.iso
 ```
 
 Each script writes a log under `tests/qemu/logs/` (gitignored). The CI run uploads logs as workflow artifacts for post-mortem.
 
+## Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `RELEASES_DIR` | `<repo-root>/releases` | Directory searched when a bare basename is given |
+| `SHIKSHAN_QEMU_LOG_DIR` | `tests/qemu/logs` | Directory for boot log files |
+| `OVMF_CODE` | `/usr/share/OVMF/OVMF_CODE.fd` | UEFI firmware code (boot-uefi.sh only) |
+| `OVMF_VARS` | `/usr/share/OVMF/OVMF_VARS.fd` | UEFI variable store template (boot-uefi.sh only) |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success marker matched in serial log |
+| `1` | Usage error / missing ISO file / OVMF firmware not found |
+| `2` | Deadline exceeded (540 s) without success marker |
+| `3` | QEMU process exited before success marker appeared |
+| `4` | `verify-iso.sh` failed — companion missing or hash mismatch |
+
 ## Success markers
 
 A boot is "successful" when the serial log contains either:
+
 - `lightdm.*autologin` (LightDM picked up our autologin config), or
 - `shikshan.local login` (getty login prompt visible)
 
-The marker is intentionally lenient — we are smoke-testing, not fully testing the desktop. Deeper UI behaviors live in the (forthcoming) installer and module-launch tests.
+The marker is intentionally lenient — we are smoke-testing, not fully testing the desktop.
+Deeper UI behaviors live in the (forthcoming) installer and module-launch tests.
