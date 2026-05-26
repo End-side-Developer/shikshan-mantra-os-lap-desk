@@ -57,13 +57,16 @@ if [[ $MISSING -eq 1 ]]; then
   exit 1
 fi
 
-# SHA-256
+# SHA-256 / SHA-512
+# The .sha256/.sha512 companion files contain the bundle basename only
+# (no directory prefix), so sha{256,512}sum -c must be run from the
+# directory containing the ISO. Otherwise sha*sum looks in CWD and fails
+# with "No such file or directory" when verify-iso is invoked from REPO_ROOT.
 echo "[verify-iso] sha256 check"
-sha256sum -c "$DIR/${BASE}.iso.sha256"
+( cd "$DIR" && sha256sum -c "${BASE}.iso.sha256" )
 
-# SHA-512
 echo "[verify-iso] sha512 check"
-sha512sum -c "$DIR/${BASE}.iso.sha512"
+( cd "$DIR" && sha512sum -c "${BASE}.iso.sha512" )
 
 # Cosign signature
 BUNDLE="$DIR/${BASE}.iso.bundle"
