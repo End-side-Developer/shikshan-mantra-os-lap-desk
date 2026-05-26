@@ -1,0 +1,82 @@
+---
+# tasks/open/SMO-0202-releases-readme.yml
+#
+# Phase-2: create the tracked releases/README.md (the directory itself stays
+# gitignored). This is the human-readable companion to ADR-0006.
+
+id: SMO-0202
+title: "Create tracked releases/README.md describing artifact bundle layout"
+type: docs
+linked_adr: "docs/adr/0006-release-artifact-layout.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "releases/README.md"
+    - "releases/.gitkeep"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0006-release-artifact-layout.md"
+    - ".gitignore"
+    - "scripts/build/build-iso.sh"
+    - "scripts/build/sbom-generate.sh"
+    - "scripts/verify/verify-iso.sh"
+  inputs:
+    bundle_naming: "shikshan-mantra-os-<version>-<arch>.<ext>"
+    documented_artifacts:
+      - "*.iso (live-build hybrid ISO)"
+      - "*.iso.sha256, *.iso.sha512"
+      - "*.cdx.json (CycloneDX SBOM)"
+      - "*.spdx.json (SPDX SBOM)"
+      - "*.intoto.jsonl (in-toto attestation)"
+      - "*.intoto.jsonl.sig (cosign signature)"
+      - "MANIFEST.txt (per-file SHA-256 list)"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "releases/README.md"
+
+S:
+  - "releases/README.md explains: this directory is the output destination for ISO builds; its contents are gitignored except this README"
+  - "README enumerates the 7 file types listed in inputs.documented_artifacts with one-line descriptions each"
+  - "README specifies the naming convention `shikshan-mantra-os-<version>-<arch>.<ext>`"
+  - "README links to ADR-0006 for the authoritative decision"
+  - "README documents how to verify a bundle locally: `bash scripts/verify/verify-iso.sh releases/<file>.iso`"
+  - "README documents how to regenerate the SBOM: `bash scripts/build/sbom-generate.sh releases/<file>.iso`"
+  - "releases/.gitkeep is present and empty so the directory survives git operations"
+  - ".gitignore confirms `releases/` patterns are aligned (no edit required if already covered by dist/build/out — note in PR body if so)"
+  - "No file outside `releases/` modified"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 30
+  max_files_changed: 2
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0200 (allowlist for releases/**) merged on main"
+  - "SMO-0201 (ADR-0006) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/release-managers"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

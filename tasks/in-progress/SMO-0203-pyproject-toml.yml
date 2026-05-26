@@ -1,0 +1,84 @@
+---
+# tasks/open/SMO-0203-pyproject-toml.yml
+#
+# Phase-2: pin Python tooling versions in a root pyproject.toml so local +
+# CI gates run against the same package versions.
+
+id: SMO-0203
+title: "Add pyproject.toml pinning Python dev tooling (yamllint, jsonschema, polib, PyYAML, pytest, ruff)"
+type: build-config
+linked_adr: null
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "pyproject.toml"
+    - "tests/unit/build/test_pyproject_pins.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "scripts/dev/bootstrap.sh"
+    - "scripts/dev/vendor-sync.py"
+    - "tests/unit/scripts/dev/test_vendor_sync.py"
+    - "tests/unit/schemas/test_vendor_manifest_schema.py"
+    - ".pre-commit-config.yaml"
+  inputs:
+    layout: "PEP 621 metadata + [tool.<each>] sections"
+    required_dev_pins:
+      yamllint: ">=1.35,<2.0"
+      jsonschema: ">=4.21,<5.0"
+      pyyaml: ">=6.0.1,<7.0"
+      polib: ">=1.2,<2.0"
+      pytest: ">=8.0,<9.0"
+      ruff: ">=0.4,<1.0"
+    optional_tool_sections:
+      - "[tool.ruff]"
+      - "[tool.pytest.ini_options]"
+    license_field: "GPL-3.0-or-later"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/unit/build/test_pyproject_pins.py"
+  coverage_delta: 0.2
+  sbom_diff: null
+  artifacts:
+    - "pyproject.toml"
+
+S:
+  - "pyproject.toml uses PEP 621 [project] metadata with name `shikshan-mantra-os-dev`, version `0.0.0`, license `GPL-3.0-or-later`"
+  - "Build system declared (e.g. [build-system] requires = [\"setuptools>=68\"], build-backend = \"setuptools.build_meta\") OR equivalent"
+  - "[project.optional-dependencies] dev = [...] pins every package listed in inputs.required_dev_pins with the exact version ranges"
+  - "[tool.ruff] section configures line length 100 and target-version py311"
+  - "[tool.pytest.ini_options] section configures testpaths = ['tests'] and `pythonpath = ['.', 'scripts']`"
+  - "tests/unit/build/test_pyproject_pins.py loads pyproject.toml via tomllib (stdlib, py3.11+) and asserts each required package + version range is present"
+  - "Running `python -m pytest tests/unit/build/test_pyproject_pins.py -v` passes"
+  - "pyproject.toml has no runtime [project.dependencies] entries (this is a dev-tooling pin file, not an installable runtime package)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 45
+  max_files_changed: 2
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0200 (allowlist for pyproject.toml) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
