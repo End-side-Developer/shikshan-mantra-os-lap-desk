@@ -1,6 +1,9 @@
 # config/package-lists/learning-kolibri.list.chroot
 # Offline learning platform. Configured to start automatically; content
 # delivery via Shikshan Mantra module catalogs.
+#
+# ADR-0007 (live-build config flags) — 2 GB RAM profile: --apt-recommends false
+# Chroot footprint target: combined lists <= 1100 MB installed size
 
 kolibri
 
