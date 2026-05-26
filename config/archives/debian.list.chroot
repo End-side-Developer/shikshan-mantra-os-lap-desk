@@ -12,11 +12,6 @@
 #   2. Re-run of ci-reproducible.yml on both old and new pin
 #   3. SBOM diff review
 
-deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] \
-  https://snapshot.debian.org/archive/debian/20260520T000000Z/ trixie main contrib
-
-deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] \
-  https://snapshot.debian.org/archive/debian-security/20260520T000000Z/ trixie-security main contrib
-
-deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] \
-  https://snapshot.debian.org/archive/debian/20260520T000000Z/ trixie-updates main contrib
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://snapshot.debian.org/archive/debian/20260520T000000Z/ trixie main contrib non-free-firmware
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://snapshot.debian.org/archive/debian-security/20260520T000000Z/ trixie-security main contrib non-free-firmware
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://snapshot.debian.org/archive/debian/20260520T000000Z/ trixie-updates main contrib non-free-firmware
