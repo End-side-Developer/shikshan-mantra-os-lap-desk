@@ -22,9 +22,12 @@ IMAGE_TYPE="iso-hybrid"              # USB-stickable + DVD bootable
 # --- Repositories (pinned snapshot) ---
 # config/archives/debian.list.chroot pins to a specific snapshot.debian.org
 # timestamp for reproducibility. Override the upstream mirror to match.
-MIRROR_BOOTSTRAP="https://deb.debian.org/debian/"
+# Bootstrap uses HTTP (not HTTPS): debootstrap verifies via GPG signatures,
+# and HTTPS via debootstrap occasionally fails inside CI containers (no TLS
+# trust store for the bootstrap stage's wget). Downstream apt still uses HTTPS.
+MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"
 MIRROR_BINARY="https://deb.debian.org/debian/"
-MIRROR_CHROOT_SECURITY="https://security.debian.org/"
+MIRROR_CHROOT_SECURITY="http://security.debian.org/"
 MIRROR_BINARY_SECURITY="https://security.debian.org/"
 
 # --- Live system ---
@@ -41,7 +44,9 @@ LB_BOOTAPPEND_LIVE_FAILSAFE="boot=live components nopersistent noeject ip=fromme
 # Tracked: ADR-0007 §persistence.
 
 # --- Memory / kernel ---
-LB_LINUX_PACKAGES="linux-image-amd64"
+# `--linux-packages` is a PREFIX — live-build appends the arch (e.g. "-amd64").
+# Passing "linux-image-amd64" yields "linux-image-amd64-amd64" which doesn't exist.
+LB_LINUX_PACKAGES="linux-image"
 LB_FIRMWARE_CHROOT="true"
 
 # --- APT options ---
