@@ -1,0 +1,19 @@
+# config/package-lists/desktop-libreoffice.list.chroot
+# LibreOffice lite — Writer/Calc/Impress only (no Base/Math/Draw/Charts),
+# GTK frontend (lighter than Qt under LXQt). Hi+En UI + help.
+#
+# Footprint: ~250 MB. Skipping Java (no libreoffice-java-common) saves
+# another ~120 MB. JRE-dependent features (Base, Wizards) are unavailable.
+
+libreoffice-core
+libreoffice-writer
+libreoffice-calc
+libreoffice-impress
+libreoffice-gtk3
+libreoffice-l10n-hi
+libreoffice-help-en-gb
+libreoffice-help-hi
+
+# Hunspell dictionaries for spell-check
+hunspell-en-us
+hunspell-hi

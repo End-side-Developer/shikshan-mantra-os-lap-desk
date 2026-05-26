@@ -1,0 +1,37 @@
+# config/package-lists/firmware-hardware.list.chroot
+# Full nonfree firmware bundle for school laptops — WiFi, GPU, CPU microcode,
+# Bluetooth, sound. Targets unknown low-end hardware (the school deployment
+# case where you don't know which WiFi chipset will show up).
+#
+# Debian 13 (trixie) moved nonfree firmware into the `non-free-firmware`
+# component per GR-2022-002. config/archives/debian.list.chroot must include
+# `non-free-firmware` for these packages to install.
+#
+# Footprint: ~150-300 MB. Justified by hardware coverage on cheap laptops.
+
+# Kernel firmware framework
+firmware-linux
+firmware-linux-nonfree
+firmware-misc-nonfree
+
+# WiFi (covers ~95% of cheap laptops)
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+firmware-libertas
+firmware-ti-connectivity
+firmware-zd1211
+
+# GPU
+firmware-amd-graphics
+
+# CPU microcode (Spectre/Meltdown + vendor bugfixes)
+intel-microcode
+amd64-microcode
+
+# Sound (Intel SOF for modern laptops, Creative for older)
+firmware-sof-signed
+
+# Bluetooth (most laptops with combo WiFi+BT chips need this)
+bluez-firmware

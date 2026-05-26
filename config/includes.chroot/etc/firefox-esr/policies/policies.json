@@ -1,0 +1,81 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisableFirefoxAccounts": false,
+    "DisablePocket": true,
+    "DisableFormHistory": false,
+    "DisablePrivateBrowsing": false,
+    "DontCheckDefaultBrowser": true,
+    "OfferToSaveLogins": false,
+    "PasswordManagerEnabled": true,
+    "BlockAboutAddons": false,
+    "BlockAboutConfig": true,
+    "EnableTrackingProtection": {
+      "Value": true,
+      "Locked": true,
+      "Cryptomining": true,
+      "Fingerprinting": true,
+      "EmailTracking": true
+    },
+    "SearchEngines": {
+      "Default": "DuckDuckGo",
+      "PreventInstalls": false,
+      "Remove": ["Yahoo", "Bing", "Amazon.com", "eBay"]
+    },
+    "Homepage": {
+      "URL": "http://kolibri.shikshan.local",
+      "Locked": false,
+      "StartPage": "homepage"
+    },
+    "NewTabPage": true,
+    "Permissions": {
+      "Camera":        { "BlockNewRequests": true, "Locked": true },
+      "Microphone":    { "BlockNewRequests": true, "Locked": true },
+      "Location":      { "BlockNewRequests": true, "Locked": true },
+      "Notifications": { "BlockNewRequests": true, "Locked": true },
+      "Autoplay":      { "Default": "block-audio", "Locked": false }
+    },
+    "ManagedBookmarks": [
+      { "name": "Learning Portals", "children": [
+        { "name": "Kolibri (offline)",     "url": "http://kolibri.shikshan.local" },
+        { "name": "DIKSHA",                "url": "https://diksha.gov.in" },
+        { "name": "BharatSkills (NCERT)",  "url": "https://bharatskills.gov.in" },
+        { "name": "ePathshala (NCERT)",    "url": "https://epathshala.nic.in" },
+        { "name": "SWAYAM (MOOCs)",        "url": "https://swayam.gov.in" }
+      ]}
+    ],
+    "Cookies": {
+      "Behavior": "reject-tracker-and-partition-foreign",
+      "ExpireAtSessionEnd": false,
+      "Locked": false
+    },
+    "Preferences": {
+      "browser.safebrowsing.malware.enabled":     { "Value": true,  "Status": "locked" },
+      "browser.safebrowsing.phishing.enabled":    { "Value": true,  "Status": "locked" },
+      "browser.safebrowsing.downloads.enabled":   { "Value": true,  "Status": "locked" },
+      "browser.search.suggest.enabled":           { "Value": false, "Status": "default" },
+      "datareporting.healthreport.uploadEnabled": { "Value": false, "Status": "locked" },
+      "media.peerconnection.enabled":             { "Value": false, "Status": "locked" }
+    },
+    "DNSOverHTTPS": {
+      "Enabled": false,
+      "Locked": true
+    },
+    "FirefoxHome": {
+      "Search": true,
+      "TopSites": false,
+      "SponsoredTopSites": false,
+      "Highlights": false,
+      "Pocket": false,
+      "SponsoredPocket": false,
+      "Snippets": false
+    },
+    "ExtensionSettings": {
+      "uBlock0@raymondhill.net": {
+        "installation_mode": "force_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+      }
+    }
+  }
+}

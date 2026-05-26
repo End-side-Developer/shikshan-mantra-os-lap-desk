@@ -11,6 +11,7 @@ echo "[hook 0010] generating locales"
 cat > /etc/locale.gen <<'EOF'
 en_IN UTF-8
 hi_IN UTF-8
+mr_IN UTF-8
 en_US.UTF-8 UTF-8
 EOF
 
