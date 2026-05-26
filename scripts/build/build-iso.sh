@@ -96,9 +96,17 @@ echo "[build-iso] ISO at $DST ($(du -sh "$DST" | cut -f1))"
 echo "[build-iso] checksums written"
 
 # ── SBOMs ─────────────────────────────────────────────────────────────────────
-if [[ "${SMOKE_SBOM:-0}" == "1" ]]; then
-    # Test-only: write empty stubs so verify-iso.sh can run without syft.
-    echo "[build-iso] SMOKE_SBOM=1 — writing empty SBOM stubs (not for production)"
+# Real SBOMs need syft on the host. If unavailable (CI runners, casual local
+# builds), write empty stubs so verify-iso.sh's companion check still passes.
+# SMOKE_SBOM=1 forces stubs explicitly. SMOKE_SBOM=0 forces failure if syft
+# missing. Default (unset) is auto-fallback.
+if [[ "${SMOKE_SBOM:-auto}" == "1" ]] || \
+   { [[ "${SMOKE_SBOM:-auto}" == "auto" ]] && ! command -v syft >/dev/null 2>&1; }; then
+    if [[ "${SMOKE_SBOM:-auto}" == "auto" ]]; then
+        echo "[build-iso] syft not installed; writing stub SBOMs (set SMOKE_SBOM=0 to require syft)"
+    else
+        echo "[build-iso] SMOKE_SBOM=1 — writing empty SBOM stubs (not for production)"
+    fi
     : > "${RELEASES_DIR}/${BUNDLE_BASE}.cdx.json"
     : > "${RELEASES_DIR}/${BUNDLE_BASE}.spdx.json"
 else
