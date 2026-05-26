@@ -2,9 +2,10 @@
 # Firefox ESR with school-safe enterprise policy.
 # Policy file shipped at: config/includes.chroot/etc/firefox-esr/policies/policies.json
 #
-# Hi+En localization. Telemetry/studies/Pocket disabled, camera/mic/location
-# blocked, SafeBrowsing always on, ManagedBookmarks pin to learning portals.
+# En-GB UI; Hindi/Marathi langpacks are Firefox addons (not Debian packages —
+# firefox-esr-l10n-hi doesn't exist in trixie). Telemetry/studies/Pocket
+# disabled, camera/mic/location blocked, SafeBrowsing always on,
+# ManagedBookmarks pin to learning portals.
 
 firefox-esr
-firefox-esr-l10n-hi
 firefox-esr-l10n-en-gb
