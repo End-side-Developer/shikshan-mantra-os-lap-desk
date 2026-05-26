@@ -6,6 +6,7 @@ End-to-end boot smoke tests for the built ISO. Used by `.github/workflows/ci-qem
 |---|---|---|
 | `boot-bios.sh` | `e2e / qemu-bios` | Boot under BIOS, wait for autologin marker |
 | `boot-uefi.sh` | `e2e / qemu-uefi` | Boot under OVMF UEFI |
+| `run-smoke.sh` | `e2e / qemu-smoke` | Orchestrates BIOS + UEFI and emits JUnit XML |
 | `persistence.sh` | `e2e / persistence` | (Phase 8 task SMO-0090) Verify persistence partition mount + write |
 | `installer-calamares.sh` | `e2e / installer` | (Phase 8 task SMO-0091) Calamares install-to-disk in VM |
 | `filtering.sh` | `e2e / web-filtering` | (Phase 8 task SMO-0092) DNS/proxy block tests |
@@ -65,6 +66,29 @@ Each script writes a log under `tests/qemu/logs/` (gitignored). The CI run uploa
 | `2` | Deadline exceeded (540 s) without success marker |
 | `3` | QEMU process exited before success marker appeared |
 | `4` | `verify-iso.sh` failed — companion missing or hash mismatch |
+
+## Orchestrator: run-smoke.sh
+
+`run-smoke.sh <iso-path-or-basename>` runs `boot-bios.sh` then `boot-uefi.sh` in
+sequence. The UEFI leg always runs even if BIOS fails, so the JUnit report is
+always complete. Exit code: `0` only if both legs exit `0`; otherwise the first
+non-zero leg's exit code is propagated (BIOS checked first).
+
+A single timestamped run directory is created under
+`${SHIKSHAN_QEMU_LOG_DIR:-tests/qemu/logs}/run-<UTC-ISO8601>/`:
+
+| File | Contents |
+|---|---|
+| `bios.log` | Combined stdout+stderr of the BIOS leg |
+| `uefi.log` | Combined stdout+stderr of the UEFI leg |
+| `junit.xml` | JUnit XML, one `<testcase>` per leg, `<system-out>` carries the log |
+
+### Test-injection environment variables (integration tests only)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `BOOT_BIOS` | `<script-dir>/boot-bios.sh` | Override BIOS leg path (stub target) |
+| `BOOT_UEFI` | `<script-dir>/boot-uefi.sh` | Override UEFI leg path (stub target) |
 
 ## Success markers
 
