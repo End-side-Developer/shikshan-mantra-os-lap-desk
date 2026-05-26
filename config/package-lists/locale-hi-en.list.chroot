@@ -8,8 +8,7 @@ locales
 locales-all
 keyboard-configuration
 
-# Input method (Devanagari typing)
+# Input method (Devanagari typing — covers Hindi + Marathi via ibus-m17n)
 ibus
 ibus-m17n
 m17n-db
-m17n-contrib

@@ -44,7 +44,9 @@ LB_BOOTAPPEND_LIVE_FAILSAFE="boot=live components nopersistent noeject ip=fromme
 # Tracked: ADR-0007 §persistence.
 
 # --- Memory / kernel ---
-LB_LINUX_PACKAGES="linux-image-amd64"
+# `--linux-packages` is a PREFIX — live-build appends the arch (e.g. "-amd64").
+# Passing "linux-image-amd64" yields "linux-image-amd64-amd64" which doesn't exist.
+LB_LINUX_PACKAGES="linux-image"
 LB_FIRMWARE_CHROOT="true"
 
 # --- APT options ---

@@ -6,7 +6,6 @@
 # Chroot footprint target: combined lists <= 1100 MB installed size
 
 icewm
-icewm-themes
 xterm
 xserver-xorg-core
 xserver-xorg-input-libinput
