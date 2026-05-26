@@ -15,8 +15,11 @@ lb clean --purge 2>/dev/null || true
 # Reconfigure (idempotent; auto/config is the source of truth)
 ./auto/config "${@}"
 
-# Build
-lb build "${@}"
+# Build — call stages directly. `lb build` would defer back to this auto/build
+# script (live-build auto-detects auto/{config,build,clean}) causing infinite recursion.
+lb bootstrap "${@}"
+lb chroot "${@}"
+lb binary "${@}"
 
 # Move resulting ISO to artifacts/ for downstream verification
 mkdir -p artifacts/

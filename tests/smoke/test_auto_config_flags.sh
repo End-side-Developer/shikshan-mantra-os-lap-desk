@@ -35,14 +35,14 @@ _check_flag '--bootloaders[[:space:]]+"?\$?(BOOTLOADER|syslinux,grub-efi)"?'    
 _check_flag '--binary-images[[:space:]]+"?\$?(IMAGE_TYPE|iso-hybrid)"?'         '--binary-images iso-hybrid'
 _check_flag '--debian-installer[[:space:]]+none'                                '--debian-installer none'
 _check_flag '--initramfs[[:space:]]+"?\$?(LB_INITRAMFS|live-boot)"?'            '--initramfs live-boot'
-_check_flag '--union-filesystem[[:space:]]+"?\$?(LB_UNION_FILESYSTEM|overlay)"?' '--union-filesystem overlay'
 _check_flag '--apt-recommends[[:space:]]+"?\$?(LB_APT_RECOMMENDS|false)"?'      '--apt-recommends false'
 _check_flag '--memtest[[:space:]]+none'                                         '--memtest none'
 _check_flag '--linux-flavours[[:space:]]+"?\$?(LB_LINUX_FLAVOURS|amd64)"?'      '--linux-flavours amd64'
 _check_flag '--linux-packages[[:space:]]+"?\$?(LB_LINUX_PACKAGES|linux-image-amd64)"?' '--linux-packages linux-image-amd64'
 _check_flag '--firmware-chroot[[:space:]]+"?\$?(LB_FIRMWARE_CHROOT|true)"?'     '--firmware-chroot true'
-_check_flag '--persistence[[:space:]]+true'                                     '--persistence true'
-_check_flag '--persistence-encryption[[:space:]]+luks'                          '--persistence-encryption luks'
+# Persistence and union-filesystem assertions removed: these flags are not exposed
+# by `lb config` in live-build 1:20250505+deb13u1. Persistence is enabled at boot
+# via the `persistence` kernel parameter + persistence.conf on the live media.
 _check_flag '^LB_BOOTAPPEND_LIVE=.*locales=en_IN\.UTF-8' 'LB_BOOTAPPEND_LIVE locales=en_IN.UTF-8'
 _check_flag '^LB_BOOTAPPEND_LIVE=.*keyboard-layouts=us' 'LB_BOOTAPPEND_LIVE keyboard-layouts=us'
 _check_flag '^LB_BOOTAPPEND_LIVE=.*hostname=shikshan'   'LB_BOOTAPPEND_LIVE hostname=shikshan'
