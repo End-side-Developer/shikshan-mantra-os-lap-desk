@@ -72,7 +72,7 @@ recovery:
     - "shikshan/devex"
 
 audit:
-  claimed_at: null
-  claimed_by: null
+  claimed_at: "2026-05-26T00:00:00Z"
+  claimed_by: "agent:claude-code"
   first_audit_seq: null
   last_audit_seq: null
