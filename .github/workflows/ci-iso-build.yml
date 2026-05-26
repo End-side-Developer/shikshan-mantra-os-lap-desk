@@ -1,0 +1,65 @@
+# .github/workflows/ci-iso-build.yml
+# SMO-0309 — clean-container live-build ISO + verify-iso + upload bundle.
+# Protected path: requires `allowlist-override` + `touches-ci` labels and
+# 2 reviewers (1 @shikshan/devex + 1 @shikshan/security). See ADR-0007.
+
+name: ci-iso-build
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write  # reserved for future cosign keyless signing
+
+concurrency:
+  group: iso-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build-iso
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      RELEASES_DIR: releases
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache live-build apt archives
+        uses: actions/cache@v4
+        with:
+          path: .build/cache
+          key: lb-cache-${{ runner.os }}-${{ hashFiles('auto/build', 'config/package-lists/**') }}
+          restore-keys: |
+            lb-cache-${{ runner.os }}-
+
+      - name: Build ISO (clean container, privileged)
+        run: bash scripts/build/build-iso.sh
+
+      - name: Verify ISO bundle
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          isos=("${RELEASES_DIR}"/shikshan-mantra-os-*.iso)
+          if [[ ${#isos[@]} -eq 0 ]]; then
+            echo "::error::no ISO found in ${RELEASES_DIR}/"
+            exit 1
+          fi
+          bash scripts/verify/verify-iso.sh "${isos[0]}"
+
+      - name: Upload bundle artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shikshan-mantra-os-${{ github.sha }}-bundle
+          path: ${{ env.RELEASES_DIR }}/
+          retention-days: 7
+          if-no-files-found: error
