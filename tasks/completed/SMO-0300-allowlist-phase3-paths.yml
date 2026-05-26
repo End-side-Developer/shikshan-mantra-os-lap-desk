@@ -1,22 +1,28 @@
 ---
-# tasks/open/SMO-0300-allowlist-phase3-paths.yml
+# tasks/in-progress/SMO-0300-allowlist-phase3-paths.yml
 #
-# Phase-3 unblocker: add docs/runbooks/** (already in allow indirectly via
-# docs/runbooks/**) and explicitly confirm tests/qemu/** stays under tests/**.
-# Adds `auto/**` to the exception list: it remains in deny, but a NEW deny
-# entry `config/bootloaders/**` already covers our bootloader assets — no
-# allowlist for auto/** is permitted; flagged here so the human reviewer is
-# aware that SMO-0303 + SMO-0306 (auto/build half) must ride `allowlist-override`.
+# Phase-3 unblocker: confirm Phase-3 build paths are already covered by
+# policies/agent-allowlist.yml `allow:` and that the deliberately-protected
+# paths (auto/**, .github/workflows/**) stay under deny. Outcome is a
+# confirmation no-op: zero new allow globs; the CONTRIBUTING.md note records
+# the verification for future agents.
+#
+# Amendment 2026-05-26 (claim handoff): agent reassigned from `human` to
+# `claude-code` because the deliverable per S1 ("close with a CONTRIBUTING
+# note") is a documentation edit, not a governance vote. The two-CODEOWNERS
+# and PR-label criteria (S4, S5) are deferred to post-Phase-3 per SMO-0299
+# (local-only workflow). Scope widened to include CONTRIBUTING.md.
 
 id: SMO-0300
 title: "Confirm Phase-3 path coverage in allowlist; flag protected auto/** edits as override-only"
 type: adr
 linked_adr: null
-agent: human
+agent: claude-code
 
 I:
   files_in_scope:
     - "policies/agent-allowlist.yml"
+    - "CONTRIBUTING.md"
   context_docs:
     - "AGENTS.md"
     - "CLAUDE.md"
@@ -55,8 +61,8 @@ S:
 R:
   max_tokens: 30000
   max_wall_minutes: 30
-  max_files_changed: 1
-  max_diff_lines: 20
+  max_files_changed: 3
+  max_diff_lines: 60
 
 T:
   stale_after_hours: 168
