@@ -81,6 +81,13 @@ allow:
   # own runtime gates and are protected (see deny list — added there if
   # absent; see ADR-0003 if tightening).
 
+    # UI sources and branding masters (ADR-0009; SMO-0402 expansion).
+  # Sources are rsynced into config/includes.chroot/ by
+  # scripts/build/sync-ui-to-iso.sh at ISO build time.
+  - "ui/**"
+  - "branding/**"
+
+
 append_only:
   - "CHANGELOG.md"                     # only the [Unreleased] section
   - "docs/audit/exports/**"            # audit exports are immutable artifacts
