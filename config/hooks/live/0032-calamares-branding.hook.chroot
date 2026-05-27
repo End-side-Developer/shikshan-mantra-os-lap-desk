@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+SRC=/usr/share/shikshan/branding/calamares/shikshan
+DST=/etc/calamares/branding/shikshan
+mkdir -p "$DST/slideshow"
+cp -f "$SRC"/branding.desc "$DST"/
+cp -f "$SRC"/*.svg "$DST"/ 2>/dev/null || true
+cp -f "$SRC"/slideshow/* "$DST"/slideshow/ 2>/dev/null || true
+chmod 0755 "$DST" "$DST/slideshow"
+find "$DST" -type f -exec chmod 0644 {} +

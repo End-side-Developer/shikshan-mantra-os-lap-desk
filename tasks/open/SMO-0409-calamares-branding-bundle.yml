@@ -1,0 +1,90 @@
+---
+# tasks/open/SMO-0409-calamares-branding-bundle.yml
+#
+# Replace the Debian-default Calamares installer text and imagery with
+# Shikshan-Mantra branding. settings.conf already references
+# `branding: shikshan` (config/includes.chroot/etc/calamares/settings.conf:13)
+# but the branding directory does not exist yet, so the installer still
+# falls back to Debian/Calamares defaults.
+#
+# Scope: SVG-only assets. For testing in this iteration the slideshow/logo
+# may reference an upstream-hosted SVG (e.g. Wikimedia Commons) downloaded
+# into the branding dir at build time -- a permanent in-house SVG lands in
+# a later task once design ships it.
+
+id: SMO-0409
+title: "Add Calamares branding bundle (text + SVG imagery)"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: copilot
+
+I:
+  files_in_scope:
+    - "branding/calamares/shikshan/branding.desc"
+    - "branding/calamares/shikshan/logo.svg"
+    - "branding/calamares/shikshan/welcome.svg"
+    - "branding/calamares/shikshan/slideshow/show.qml"
+    - "branding/calamares/shikshan/slideshow/slide1.svg"
+    - "branding/calamares/shikshan/README.md"
+    - "config/hooks/live/0032-calamares-branding.hook.chroot"
+    - "tests/build/test_calamares_branding.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "config/includes.chroot/etc/calamares/settings.conf"
+    - "branding/tokens.json"
+    - "branding/logo/shikshan-mantra.svg"
+    - "config/hooks/live/0031-greeter-theme.hook.chroot"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_calamares_branding.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "branding/calamares/shikshan/branding.desc"
+    - "config/hooks/live/0032-calamares-branding.hook.chroot"
+
+S:
+  - "branding/calamares/shikshan/branding.desc is a valid Calamares branding descriptor (YAML) with keys: componentName: shikshan; welcomeStyleCalamares: false; strings.productName: 'Shikshan Mantra OS'; strings.shortProductName: 'Shikshan Mantra'; strings.version: '1.0'; strings.shortVersion: '1.0'; strings.versionedName: 'Shikshan Mantra OS 1.0'; strings.shortVersionedName: 'Shikshan Mantra 1.0'; strings.bootloaderEntryName: 'Shikshan Mantra'; strings.productUrl, strings.supportUrl, strings.knownIssuesUrl, strings.releaseNotesUrl all pointing at https://shikshan-mantra.in/* placeholders"
+  - "branding.desc references images: productLogo: logo.svg, productIcon: logo.svg, productWelcome: welcome.svg -- all SVG, no PNG/JPG"
+  - "branding.desc slideshow: 'slideshow/show.qml' and slideshowAPI: 2"
+  - "logo.svg and welcome.svg are valid SVG files (<?xml ...?> + <svg xmlns=\"http://www.w3.org/2000/svg\" ...>). For this iteration, welcome.svg MAY be sourced verbatim from an upstream-hosted online SVG (e.g. https://upload.wikimedia.org/wikipedia/commons/4/4e/Crystal_Clear_app_kedu.svg or similar permissively-licensed file); the chosen source URL + license is recorded in branding/calamares/shikshan/README.md so it can be swapped out later. logo.svg MAY symlink/copy branding/logo/shikshan-mantra.svg if that file is a valid SVG, otherwise also use a placeholder online SVG and document it"
+  - "slideshow/show.qml is a minimal Calamares slideshow QML that renders slide1.svg with the text 'Welcome to Shikshan Mantra OS' (slideshowAPI 2 compatible: Presentation with at least one Slide element)"
+  - "slideshow/slide1.svg is a valid SVG (online placeholder is acceptable, document source in README.md)"
+  - "branding/calamares/shikshan/README.md documents: directory layout, each SVG's upstream source URL + license, the path /etc/calamares/branding/shikshan/ where the bundle lands, and how to replace the placeholder SVGs with in-house art"
+  - "config/hooks/live/0032-calamares-branding.hook.chroot is `set -eu`, shellcheck-clean, mode 0755, and: (a) creates /etc/calamares/branding/shikshan/ inside the chroot, (b) copies all files from /usr/share/shikshan/branding/calamares/shikshan/ (staged via config/includes.chroot/usr/share/shikshan/branding/calamares/shikshan/ -- which the hook may build by copying from a known source path, or the files may be placed directly under config/includes.chroot/usr/share/shikshan/branding/calamares/shikshan/ and the hook just moves them), (c) sets file modes 0644 for assets and 0755 for the directory, (d) is idempotent (safe to rerun)"
+  - "Hook 0032 numeric prefix > 0031 (greeter) and < 0040 (boundary with later batches)"
+  - "tests/build/test_calamares_branding.sh asserts: (1) branding.desc exists and YAML-parses, (2) componentName equals 'shikshan', (3) productName contains 'Shikshan Mantra', (4) all referenced images (productLogo, productIcon, productWelcome) end in .svg, (5) each .svg file in branding/calamares/shikshan/ starts with valid SVG markup (xmlns http://www.w3.org/2000/svg present), (6) hook 0032 is executable mode 0755, (7) hook 0032 is shellcheck-clean, (8) no .png/.jpg/.jpeg/.bmp under branding/calamares/shikshan/"
+  - "No edits to config/includes.chroot/etc/calamares/settings.conf (it already names branding: shikshan); no edits to existing hooks 0030 or 0031"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 45
+  max_files_changed: 8
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0405 (slick-greeter theme) precedent for hook numbering and branding layout exists on main"
+  - "config/includes.chroot/etc/calamares/settings.conf is unchanged on the working branch (it already declares branding: shikshan)"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
