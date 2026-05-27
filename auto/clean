@@ -1,7 +1,20 @@
 #!/bin/sh
 # auto/clean — purge live-build state. PROTECTED.
+#
+# WARNING: do NOT call 'lb clean' here. This script IS the auto/clean hook
+# invoked by lb clean — calling lb clean from here causes infinite recursion
+# (each call appends another --purge to $@ and re-enters this script).
+# Directly remove the directories that lb clean --purge would remove instead.
 set -eu
-lb clean --purge "${@}"
-# Also drop our artifact tree (kept tidy; CI uploads before this fires)
-rm -rf artifacts/ binary.* chroot/ cache/ .build/ || true
+
+# live-build build artefacts
+rm -rf binary/ chroot/ cache/ .build/ build/ 2>/dev/null || true
+
+# live-build outputs at repo root (lb puts them here before auto/build mv)
+rm -f binary.*.iso binary.hybrid.iso binary.iso live-image-*.iso 2>/dev/null || true
+rm -f binary.* 2>/dev/null || true
+
+# Our artifact tree (kept tidy; CI uploads before this fires)
+rm -rf artifacts/ 2>/dev/null || true
+
 echo "auto/clean: complete"
