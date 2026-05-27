@@ -9,7 +9,7 @@
 xserver-xorg
 xinit
 lightdm
-lightdm-slick-greeter
+slick-greeter
 
 # LXQt core
 lxqt-core
