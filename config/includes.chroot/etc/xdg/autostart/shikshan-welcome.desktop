@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Shikshan Mantra Welcome
+GenericName=First-login role picker
+Comment=Show the Shikshan Mantra OS welcome dialog on first login.
+Exec=/usr/local/bin/shikshan-welcome
+Icon=/usr/share/shikshan/branding/logo/shikshan-mantra.svg
+Terminal=false
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
+Categories=System;
