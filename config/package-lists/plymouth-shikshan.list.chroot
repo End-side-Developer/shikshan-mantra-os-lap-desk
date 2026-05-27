@@ -1,0 +1,10 @@
+# config/package-lists/plymouth-shikshan.list.chroot
+#
+# Plymouth boot splash for Shikshan Mantra OS.
+# The theme files themselves are staged via
+# config/includes.chroot/usr/share/plymouth/themes/shikshan/, and
+# config/hooks/live/0033-plymouth-default.hook.chroot sets it as default.
+# ADR-0010 (docs/adr/0010-bootloader-visual-identity.md).
+
+plymouth
+plymouth-themes
