@@ -23,7 +23,7 @@ cat > /etc/lightdm/lightdm.conf.d/60-shikshan-greeter.conf <<'EOF'
 # 50-shikshan-autologin.conf is active; shikshan-claimed-gate moves that file
 # aside when /var/lib/shikshan/claimed exists.
 [Seat:*]
-greeter-session=lightdm-slick-greeter
+greeter-session=slick-greeter
 EOF
 
 echo "[hook 0031] installing shikshan-claimed-gate"
