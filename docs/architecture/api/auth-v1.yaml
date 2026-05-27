@@ -1,0 +1,142 @@
+# docs/architecture/api/auth-v1.yaml — Shikshan Mantra Auth API.
+# Frozen by ADR-0009 / SMO-0407. Implementation lands separately (SMO-0299 or follow-up).
+openapi: 3.1.0
+info:
+  title: Shikshan Mantra Auth API
+  version: 1.0.0
+  summary: Authentication and role exchange for Shikshan Mantra OS.
+  description: |
+    Spec only — no client/server code in this batch. Surfaced by
+    ui/login/welcome (SMO-0406); client implementation in SMO-0299.
+    Transport: TLS, CA pinned via /etc/shikshan/auth.yml.
+
+servers:
+  - url: https://auth.example.invalid/v1
+    description: Placeholder; runtime URL from /etc/shikshan/auth.yml backend.url.
+
+paths:
+  /auth/login:
+    post:
+      operationId: postLogin
+      summary: Exchange credentials for access + refresh tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      operationId: postRefresh
+      summary: Trade a refresh token for a new access token.
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/logout:
+    post:
+      operationId: postLogout
+      summary: Revoke a refresh token (idempotent).
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LogoutRequest' }
+      responses:
+        '200':
+          description: Token revoked. No body.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing credentials.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Forbidden:
+      description: Authenticated but role lacks permission.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    TooManyRequests:
+      description: Rate-limited. Inspect retry_after.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:       { type: string, minLength: 1 }
+        password:       { type: string, minLength: 1, writeOnly: true }
+        institution_id: { type: [string, 'null'] }
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string, minLength: 1, writeOnly: true }
+
+    LogoutRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string, minLength: 1, writeOnly: true }
+
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, expires_in, role, profile]
+      properties:
+        access_token:  { type: string }
+        refresh_token: { type: string }
+        expires_in:    { type: integer, minimum: 1 }
+        role:          { $ref: '#/components/schemas/Role' }
+        profile:       { $ref: '#/components/schemas/Profile' }
+
+    Role:
+      type: string
+      enum: [student, teacher, admin, institution_admin]
+
+    Profile:
+      type: object
+      required: [user_id, display_name]
+      properties:
+        user_id:      { type: string }
+        display_name: { type: string }
+        institution:  { type: [string, 'null'] }
+        avatar_url:   { type: [string, 'null'], format: uri }
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:        { type: string }
+        message:     { type: string }
+        retry_after: { type: [integer, 'null'], minimum: 0 }
