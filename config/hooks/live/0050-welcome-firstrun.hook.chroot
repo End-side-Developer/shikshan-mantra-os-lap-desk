@@ -1,0 +1,48 @@
+#!/bin/sh
+# config/hooks/live/0050-welcome-firstrun.hook.chroot
+# Install /usr/local/bin/shikshan-welcome (autostart wrapper). The
+# autostart .desktop entry itself is shipped via includes.chroot. ADR-0009.
+
+set -eu
+
+echo "[hook 0050] installing shikshan-welcome wrapper"
+
+mkdir -p /usr/local/bin
+cat > /usr/local/bin/shikshan-welcome <<'EOF'
+#!/bin/sh
+# /usr/local/bin/shikshan-welcome
+# Show the Shikshan Mantra welcome dialog on first user login. Idempotent —
+# the firstrun marker ~/.config/shikshan/welcome-shown is written after the
+# page is opened so the wrapper is a no-op on subsequent autostart events.
+set -eu
+
+MARKER="${HOME}/.config/shikshan/welcome-shown"
+if [ -f "$MARKER" ]; then
+    exit 0
+fi
+
+PAGE="/usr/share/shikshan/login/welcome/index.html"
+if [ ! -f "$PAGE" ]; then
+    echo "[shikshan-welcome] welcome page missing at $PAGE; nothing to show" >&2
+    exit 0
+fi
+
+mkdir -p "$(dirname "$MARKER")"
+
+if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "file://${PAGE}" >/dev/null 2>&1 || true
+else
+    echo "[shikshan-welcome] xdg-open not available; cannot show welcome page" >&2
+fi
+
+# Mark as shown regardless of browser exit code so we do not re-prompt.
+touch "$MARKER"
+EOF
+chmod 0755 /usr/local/bin/shikshan-welcome
+
+# Sanity-check that the autostart .desktop landed via includes.chroot.
+if [ ! -f /etc/xdg/autostart/shikshan-welcome.desktop ]; then
+    echo "[hook 0050] WARN: /etc/xdg/autostart/shikshan-welcome.desktop missing" >&2
+fi
+
+echo "[hook 0050] done"
