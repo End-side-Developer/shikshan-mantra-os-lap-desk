@@ -55,7 +55,7 @@ LB_APT_HTTP_PROXY=""
 LB_APT_PIPELINE="3"
 # Disable validity-period check so snapshot.debian.org pins don't expire mid-CI.
 # The pinned timestamp IS the version lock; rolling InRelease TTLs are redundant.
-LB_APT_OPTIONS="-o Acquire::Check-Valid-Until=false"
+LB_APT_OPTIONS="-y -o Acquire::Check-Valid-Until=false"
 
 # --- Templates and branding ---
 # LB_SYSLINUX_THEME deferred to Phase-8 SMO-0061 (bootloader assets not yet created)
