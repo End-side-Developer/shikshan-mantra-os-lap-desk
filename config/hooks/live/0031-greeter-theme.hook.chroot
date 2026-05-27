@@ -1,0 +1,72 @@
+#!/bin/sh
+# config/hooks/live/0031-greeter-theme.hook.chroot
+# Branded slick-greeter conf + claimed-marker gating. ADR-0009.
+# Runs after 0030-autologin.hook.chroot; does not modify 50-shikshan-autologin.conf.
+
+set -eu
+
+echo "[hook 0031] installing slick-greeter configuration"
+
+GREETER_SRC=/usr/share/shikshan/branding/greeter/slick-greeter.conf
+GREETER_DST=/etc/lightdm/slick-greeter.conf
+
+if [ -f "$GREETER_SRC" ]; then
+    install -m 0644 "$GREETER_SRC" "$GREETER_DST"
+else
+    echo "[hook 0031] WARN: $GREETER_SRC missing; greeter will use slick-greeter defaults" >&2
+fi
+
+echo "[hook 0031] declaring greeter-session"
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/60-shikshan-greeter.conf <<'EOF'
+# Written by config/hooks/live/0031-greeter-theme.hook.chroot. No effect while
+# 50-shikshan-autologin.conf is active; shikshan-claimed-gate moves that file
+# aside when /var/lib/shikshan/claimed exists.
+[Seat:*]
+greeter-session=lightdm-slick-greeter
+EOF
+
+echo "[hook 0031] installing shikshan-claimed-gate"
+mkdir -p /usr/local/bin
+cat > /usr/local/bin/shikshan-claimed-gate <<'EOF'
+#!/bin/sh
+# /usr/local/bin/shikshan-claimed-gate
+#
+# Toggle the LightDM autologin conf based on the claimed-marker file:
+#   marker present (/var/lib/shikshan/claimed)
+#       -> autologin disabled, greeter shows
+#   marker absent
+#       -> autologin re-enabled (live-session default)
+#
+# Run by lightdm.service via systemd drop-in ExecStartPre. Idempotent.
+
+set -eu
+
+MARKER=/var/lib/shikshan/claimed
+ENABLED=/etc/lightdm/lightdm.conf.d/50-shikshan-autologin.conf
+DISABLED=/etc/lightdm/lightdm.conf.d/.50-shikshan-autologin.conf.disabled
+
+if [ -f "$MARKER" ]; then
+    if [ -f "$ENABLED" ]; then
+        mv "$ENABLED" "$DISABLED"
+        echo "[shikshan-claimed-gate] marker present -> autologin disabled"
+    fi
+else
+    if [ -f "$DISABLED" ]; then
+        mv "$DISABLED" "$ENABLED"
+        echo "[shikshan-claimed-gate] marker absent -> autologin re-enabled"
+    fi
+fi
+EOF
+chmod 0755 /usr/local/bin/shikshan-claimed-gate
+
+echo "[hook 0031] installing systemd drop-in for lightdm.service"
+mkdir -p /etc/systemd/system/lightdm.service.d
+cat > /etc/systemd/system/lightdm.service.d/shikshan-claimed.conf <<'EOF'
+# /etc/systemd/system/lightdm.service.d/shikshan-claimed.conf
+# Written by config/hooks/live/0031-greeter-theme.hook.chroot
+[Service]
+ExecStartPre=-/usr/local/bin/shikshan-claimed-gate
+EOF
+
+echo "[hook 0031] done"
