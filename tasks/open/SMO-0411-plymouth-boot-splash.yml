@@ -1,0 +1,96 @@
+---
+# tasks/open/SMO-0411-plymouth-boot-splash.yml
+#
+# Phase 4, final surface: ship a Plymouth theme that replaces the default
+# Debian Plymouth splash during the kernel -> desktop transition. This is
+# the last branding gap on the boot path. ADR-0010 covers it.
+#
+# Plymouth runs after initramfs hands off to systemd and before the
+# greeter starts. Without a custom theme, the user sees the Debian
+# Plymouth default (or a plain text console) between bootloader and
+# slick-greeter -- a brand discontinuity that Phase 4 closes.
+
+id: SMO-0411
+title: "Plymouth boot splash (shikshan theme)"
+type: build-config
+phase: "4"
+linked_adr: "docs/adr/0010-bootloader-visual-identity.md"
+agent: claude
+
+labels:
+  - phase-4
+  - branding
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/plymouth/themes/shikshan/shikshan.plymouth"
+    - "config/includes.chroot/usr/share/plymouth/themes/shikshan/shikshan.script"
+    - "config/includes.chroot/usr/share/plymouth/themes/shikshan/logo.png"
+    - "config/includes.chroot/usr/share/plymouth/themes/shikshan/background.png"
+    - "config/includes.chroot/usr/share/plymouth/themes/shikshan/README.md"
+    - "config/package-lists/plymouth-shikshan.list.chroot"
+    - "config/hooks/live/0033-plymouth-default.hook.chroot"
+    - "tests/build/test_plymouth_theme.sh"
+
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0010-bootloader-visual-identity.md"
+    - "docs/phases/phase-4.md"
+    - "branding/tokens.json"
+    - "branding/logo/shikshan-mantra.svg"
+    - "config/hooks/live/0031-greeter-theme.hook.chroot"
+    - "config/hooks/live/0032-calamares-branding.hook.chroot"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_plymouth_theme.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/plymouth/themes/shikshan/shikshan.plymouth"
+    - "config/hooks/live/0033-plymouth-default.hook.chroot"
+
+S:
+  - "config/includes.chroot/usr/share/plymouth/themes/shikshan/shikshan.plymouth is a valid Plymouth theme descriptor (INI format) with [Plymouth Theme] section containing: Name=Shikshan Mantra OS; Description=Shikshan Mantra OS boot splash; ModuleName=script; and a [script] section with ImageDir=/usr/share/plymouth/themes/shikshan and ScriptFile=/usr/share/plymouth/themes/shikshan/shikshan.script"
+  - "shikshan.script is a Plymouth script (Plymouth's JavaScript-like DSL) that: (1) loads background.png and logo.png from ImageDir, (2) centers the logo on the screen, (3) shows a progress indicator (text 'Loading...' OR a small progress bar) using brand colors from tokens.json, (4) defines refresh() callback that re-blits each frame"
+  - "logo.png is a valid PNG of dimensions in {256x256, 320x320, 384x384} showing the Shikshan Mantra logo, derived in-house from branding/logo/shikshan-mantra.svg"
+  - "background.png is a valid PNG of dimensions in {1280x720, 1366x768, 1920x1080} with the deep-blue (#0B1620) brand background and optional wordmark; in-house from brand tokens"
+  - "config/includes.chroot/usr/share/plymouth/themes/shikshan/README.md documents: (a) protected status of this directory is NOT applied (Plymouth themes are NOT in protected-paths.yml deny), (b) image source and SPDX license (CC-BY-SA-4.0, derived from branding/logo/shikshan-mantra.svg + branding/tokens.json), (c) how to regenerate the PNGs"
+  - "config/package-lists/plymouth-shikshan.list.chroot installs: plymouth, plymouth-themes (NOT plymouth-x11 -- that's for X11 hand-off which slick-greeter handles separately)"
+  - "config/hooks/live/0033-plymouth-default.hook.chroot is `#!/bin/sh set -eu`, shellcheck-clean, mode 0755, and: (a) runs `plymouth-set-default-theme shikshan` (preferred when plymouth-set-default-theme is in PATH) OR writes /etc/plymouth/plymouthd.conf with [Daemon] Theme=shikshan as a fallback, (b) regenerates initramfs via `update-initramfs -u` if /usr/sbin/update-initramfs exists (best-effort; live-build regenerates initramfs at a later stage), (c) is idempotent"
+  - "Hook 0033 numeric prefix > 0032 (calamares) and < 0040 (boundary with later batches)"
+  - "tests/build/test_plymouth_theme.sh asserts: (1) shikshan.plymouth exists and parses (grep '[Plymouth Theme]' and 'Name=Shikshan' and 'ModuleName=script'), (2) shikshan.script exists and is non-empty, (3) logo.png exists, dims in {256x256, 320x320, 384x384}, valid PNG (via PIL when available), (4) background.png exists, dims in {1280x720, 1366x768, 1920x1080}, valid PNG, (5) plymouth-shikshan.list.chroot contains 'plymouth' and 'plymouth-themes', (6) hook 0033 is mode 0755, starts with '#!/bin/sh' and 'set -eu', references the 'shikshan' theme name, (7) README mentions SPDX-License-Identifier"
+  - "tests/build/test_plymouth_theme.sh is shellcheck-clean, mode 0755, executable from repo root"
+  - "No paths in I.files_in_scope intersect policies/protected-paths.yml#deny"
+  - "All hooks ordered: 0010 (locale) < 0020 (user) < 0030 (autologin) < 0031 (greeter) < 0032 (calamares) < 0033 (plymouth)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 50
+  max_files_changed: 8
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0410 (bootloader branding) is on main -- bootloader -> Plymouth handoff is now branded end-to-end after this task"
+  - "ADR-0010 (docs/adr/0010-bootloader-visual-identity.md) is on main"
+  - "docs/phases/phase-4.md is on main"
+  - "No path in I.files_in_scope is in policies/protected-paths.yml#deny -- this is NOT a protected-path override task"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "should not happen for this task; if it does, abort and audit"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
