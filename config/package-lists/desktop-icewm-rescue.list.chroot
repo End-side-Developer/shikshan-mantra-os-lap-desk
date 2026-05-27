@@ -1,15 +1,16 @@
 # config/package-lists/desktop-icewm-rescue.list.chroot
 # Rescue / ultra-low-resource desktop. Selected with `shikshan_rescue` boot
 # parameter on the bootloader menu (defined in config/bootloaders/).
+#
+# ADR-0007 (live-build config flags) — 2 GB RAM profile: --apt-recommends false
+# Chroot footprint target: combined lists <= 1100 MB installed size
 
 icewm
-icewm-themes
 xterm
-xinit
 xserver-xorg-core
 xserver-xorg-input-libinput
 xserver-xorg-video-vesa
 xserver-xorg-video-fbdev
-network-manager
-fonts-noto-core
-fonts-deva
+# xinit, network-manager, fonts-noto-core, fonts-deva are pulled in by
+# desktop-lxqt.list.chroot — listed there to keep the LXQt default
+# self-contained; the rescue session shares the same chroot.

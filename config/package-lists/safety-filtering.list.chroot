@@ -2,9 +2,16 @@
 # School-safe web filtering. PLAN.md "Safety" + AGENTS.md §13 defaults.
 # Changes to safety-default packages auto-apply touches-safety-defaults
 # label (per policies/sensitive-change-labels.yml).
+#
+# ADR-0007 (live-build config flags) — 2 GB RAM profile: --apt-recommends false
+# Chroot footprint target: combined lists <= 1100 MB installed size
 
-dnsmasq                  # local DNS resolver for school-safe DNS rewrites
-e2guardian               # optional content-filter proxy
+# local DNS resolver for school-safe DNS rewrites
+dnsmasq
+
+# optional content-filter proxy
+e2guardian
+
 ca-certificates
 iptables
 nftables

@@ -1,0 +1,77 @@
+---
+# tasks/open/SMO-0310-ci-qemu-smoke-workflow.yml
+#
+# `.github/workflows/**` is in policies/protected-paths.yml#deny. Human-only
+# task, allowlist-override + touches-ci + 2 reviewers (devex + security).
+
+id: SMO-0310
+title: "Author ci-qemu-smoke.yml: download SMO-0309 bundle and run BIOS+UEFI smoke (human override)"
+type: build-config
+linked_adr: "docs/adr/0008-qemu-smoke-criteria.md"
+agent: human
+
+I:
+  files_in_scope:
+    - ".github/workflows/ci-qemu-smoke.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0008-qemu-smoke-criteria.md"
+    - "tests/qemu/boot-bios.sh"
+    - "tests/qemu/boot-uefi.sh"
+    - "tests/qemu/run-smoke.sh"
+    - ".github/workflows/ci-iso-build.yml"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    runner: "ubuntu-22.04"
+    qemu_apt_packages: ["qemu-system-x86", "ovmf"]
+    artifact_source: "ci-iso-build.yml job artifact `shikshan-mantra-os-${{ github.sha }}-bundle`"
+    junit_upload: true
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - ".github/workflows/ci-qemu-smoke.yml triggers on `workflow_run` completion of ci-iso-build.yml (conclusion=success) and on workflow_dispatch"
+  - "Job uses ubuntu-22.04, installs `qemu-system-x86 ovmf` via apt"
+  - "Job downloads the `shikshan-mantra-os-${{ github.sha }}-bundle` artifact from ci-iso-build.yml into ./releases/"
+  - "Job runs `bash tests/qemu/run-smoke.sh ${BUNDLE_BASE}.iso` and fails on non-zero"
+  - "Job uploads `tests/qemu/logs/run-*/junit.xml` as an actions artifact named `qemu-smoke-junit-${{ github.sha }}`"
+  - "Job uploads the per-run log directory `tests/qemu/logs/run-*/` as `qemu-smoke-logs-${{ github.sha }}`"
+  - "Workflow declares `permissions: contents: read, actions: read` (actions:read to download the bundle from ci-iso-build.yml)"
+  - "Workflow is registered as a required status check via .github/rulesets/main-branch.json (separate human PR if needed; note in PR body)"
+  - "PR carries labels `allowlist-override` AND `touches-ci`"
+  - "PR has 2 distinct human reviewers from @shikshan/devex AND @shikshan/security"
+  - "Override entry written to docs/audit/audit.db with action=override on merge"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 60
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 168
+
+preconditions:
+  - "SMO-0309 (ci-iso-build) merged on main"
+  - "PR opener applies labels `allowlist-override` and `touches-ci`"
+  - "Two human reviewers from @shikshan/devex AND @shikshan/security acknowledge override"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

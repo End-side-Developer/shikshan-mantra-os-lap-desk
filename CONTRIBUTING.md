@@ -59,6 +59,15 @@ All must exit 0.
 
 Architectural changes (new public interface, new component, change to a safety default, change to the build pipeline shape) require a matching ADR in `docs/adr/NNNN-<slug>.md` before the implementation PR. Use `docs/adr/0000-template.md`. Reference the ADR file path in the PR body.
 
+## Allowlist coverage & override-only paths
+
+Phase-3 build paths verified covered by [policies/agent-allowlist.yml](policies/agent-allowlist.yml) (SMO-0300, 2026-05-26): `tests/qemu/**` (via `tests/**`), `config/hooks/live/**`, `config/hooks/normal/**`, `config/package-lists/*.list.chroot`, `config/includes.chroot/etc/shikshan/**`, `docs/adr/**`, `docs/runbooks/**`.
+
+Two path families are intentionally **kept under deny**. Edits to them must ride the `allowlist-override` label with two distinct CODEOWNERS-team reviewers:
+
+- `auto/**` — see SMO-0303 (auto/config) and SMO-0306 (auto/build half).
+- `.github/workflows/**` — see SMO-0309 and SMO-0310.
+
 ## Tests
 
 Every code change ships new or updated tests. See AGENTS.md §7 for the test placement matrix.

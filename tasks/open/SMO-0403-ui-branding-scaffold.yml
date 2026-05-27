@@ -1,0 +1,91 @@
+---
+# tasks/open/SMO-0403-ui-branding-scaffold.yml
+#
+# Create the top-level `ui/` and `branding/` directory trees with READMEs,
+# .gitkeep markers, and the canonical `branding/tokens.json` palette. No
+# asset content yet — that lands in SMO-0404+. This task only stands up the
+# layout that ADR-0009 locked in.
+#
+# Depends on SMO-0402 (allowlist expansion) being merged so claude-code can
+# write under ui/** and branding/**.
+
+id: SMO-0403
+title: "Scaffold ui/ and branding/ directory trees with tokens.json"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "ui/README.md"
+    - "ui/launcher/.gitkeep"
+    - "ui/login/.gitkeep"
+    - "ui/themes/.gitkeep"
+    - "ui/shared/.gitkeep"
+    - "branding/README.md"
+    - "branding/wallpapers/.gitkeep"
+    - "branding/logo/.gitkeep"
+    - "branding/greeter/.gitkeep"
+    - "branding/tokens.json"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "policies/agent-allowlist.yml"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "ui/README.md"
+    - "ui/launcher/.gitkeep"
+    - "ui/login/.gitkeep"
+    - "ui/themes/.gitkeep"
+    - "ui/shared/.gitkeep"
+    - "branding/README.md"
+    - "branding/wallpapers/.gitkeep"
+    - "branding/logo/.gitkeep"
+    - "branding/greeter/.gitkeep"
+    - "branding/tokens.json"
+
+S:
+  - "ui/README.md documents subdirectory purposes (launcher, login, themes, shared) and explicitly states sources are copied into config/includes.chroot/usr/share/shikshan/ by scripts/build/sync-ui-to-iso.sh (added in SMO-0404)"
+  - "branding/README.md documents subdirectory purposes (wallpapers, logo, greeter) and references ADR-0009"
+  - "branding/tokens.json is valid JSON and declares at least: primary color, secondary color, accent color, background-dark, background-light, text-primary, text-muted, font-family-sans, font-family-mono — all colors in #RRGGBB form"
+  - "branding/tokens.json includes a top-level `$schema` field pointing to a future schemas/tokens.schema.json (path documented in branding/README.md, schema itself out of scope)"
+  - "Each .gitkeep file is empty (zero bytes)"
+  - "No file outside `ui/` and `branding/` is modified"
+  - "yamllint passes (no YAML files added)"
+  - "markdownlint passes on both READMEs"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 30
+  max_files_changed: 10
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0401 (ADR-0009) merged on main"
+  - "SMO-0402 (allowlist expansion) merged on main"
+  - "ui/ and branding/ do not yet exist on the working branch"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

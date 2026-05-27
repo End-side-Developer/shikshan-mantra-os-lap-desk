@@ -15,19 +15,35 @@ lb clean --purge 2>/dev/null || true
 # Reconfigure (idempotent; auto/config is the source of truth)
 ./auto/config "${@}"
 
-# Build
-lb build "${@}"
+# Build — call stages directly. `lb build` would defer back to this auto/build
+# script (live-build auto-detects auto/{config,build,clean}) causing infinite recursion.
+lb bootstrap "${@}"
+lb chroot "${@}"
+lb binary "${@}"
 
-# Move resulting ISO to artifacts/ for downstream verification
+# Move resulting ISO to artifacts/ for downstream verification.
+# Live-build's filename varies by version and config:
+#   modern (>= 2020):    live-image-${ARCH}.hybrid.iso  (current trixie)
+#   intermediate:        binary.hybrid.iso  /  binary.iso
 mkdir -p artifacts/
-if [ -f "binary.hybrid.iso" ]; then
-    mv binary.hybrid.iso artifacts/shikshan.iso
-elif [ -f "binary.iso" ]; then
-    mv binary.iso artifacts/shikshan.iso
-else
-    echo "auto/build: no ISO produced" >&2
+ARCH_FOR_ISO="$(dpkg --print-architecture 2>/dev/null || echo amd64)"
+for candidate in \
+    "live-image-${ARCH_FOR_ISO}.hybrid.iso" \
+    "live-image-${ARCH_FOR_ISO}.iso" \
+    "binary.hybrid.iso" \
+    "binary.iso" ; do
+    if [ -f "$candidate" ]; then
+        mv "$candidate" artifacts/shikshan.iso
+        SRC_NAME="$candidate"
+        break
+    fi
+done
+if [ ! -f "artifacts/shikshan.iso" ]; then
+    echo "auto/build: no ISO produced (looked for live-image-*.hybrid.iso, binary*.iso)" >&2
+    ls -la *.iso 2>&1 || true
     exit 2
 fi
+echo "auto/build: found ISO at ${SRC_NAME:-unknown}, moved to artifacts/shikshan.iso"
 
 # Hashes
 sha256sum artifacts/shikshan.iso | tee artifacts/shikshan.iso.sha256

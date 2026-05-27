@@ -4,8 +4,22 @@
 
 set -euo pipefail
 
-ISO="${1:?usage: boot-bios.sh <iso>}"
-[[ -f "$ISO" ]] || { echo "missing ISO: $ISO" >&2; exit 1; }
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+RELEASES_DIR="${RELEASES_DIR:-$REPO_ROOT/releases}"
+
+ISO_ARG="${1:?usage: boot-bios.sh <iso-path-or-bundle-basename>}"
+if [[ "$ISO_ARG" == */* ]]; then
+  ISO="$ISO_ARG"
+else
+  ISO="$RELEASES_DIR/$ISO_ARG"
+fi
+
+[[ -f "$ISO" ]] || { echo "[qemu-bios] missing ISO: $ISO" >&2; exit 1; }
+
+if ! "$REPO_ROOT/scripts/verify/verify-iso.sh" "$ISO"; then
+  echo "[qemu-bios] verify-iso failed" >&2
+  exit 4
+fi
 
 LOGDIR="${SHIKSHAN_QEMU_LOG_DIR:-tests/qemu/logs}"
 mkdir -p "$LOGDIR"
@@ -30,6 +44,7 @@ PID=$!
 
 # Wait for either the login prompt or the launcher to appear in the log.
 # The exact string is set by live-build's getty + LightDM autologin.
+# ADR-0008: success regex, 540s deadline, 2 GB ceiling
 SUCCESS_RE='lightdm.*autologin|shikshan.local login'
 deadline=$(( $(date +%s) + 540 ))
 

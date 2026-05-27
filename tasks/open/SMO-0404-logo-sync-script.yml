@@ -1,0 +1,81 @@
+---
+# tasks/open/SMO-0404-logo-sync-script.yml
+#
+# Ship the Shikshan Mantra logo as an SVG master, add the build-time sync
+# script that copies ui/ and branding/ sources into the live-build
+# includes.chroot payload, and wire it into scripts/build/build-iso.sh as a
+# pre-`lb build` step.
+#
+# Wallpapers (PNG) are explicitly deferred to a follow-up design task; v1
+# greeter uses a solid background derived from branding/tokens.json.
+
+id: SMO-0404
+title: "Add Shikshan logo SVG, sync-ui-to-iso script, build-iso wiring"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "branding/logo/shikshan-mantra.svg"
+    - "branding/tokens.json"
+    - "scripts/build/sync-ui-to-iso.sh"
+    - "scripts/build/build-iso.sh"
+    - "tests/build/test_sync_ui_to_iso.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "docs/adr/0007-live-build-config-flags.md"
+    - "scripts/build/build-iso.sh"
+    - "ui/README.md"
+    - "branding/README.md"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_sync_ui_to_iso.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "branding/logo/shikshan-mantra.svg"
+    - "scripts/build/sync-ui-to-iso.sh"
+
+S:
+  - "branding/logo/shikshan-mantra.svg is a valid SVG (xmllint --noout passes), uses only built-in fonts or path-converted text (no external font references), declares viewBox, and includes a `<title>Shikshan Mantra</title>` element"
+  - "scripts/build/sync-ui-to-iso.sh is a POSIX sh script with `set -eu`, shellcheck-clean (no warnings above SC1090)"
+  - "sync-ui-to-iso.sh rsyncs `ui/launcher/` -> `config/includes.chroot/usr/share/shikshan/launcher/`, `ui/login/` -> `config/includes.chroot/usr/share/shikshan/login/`, `ui/themes/` -> `config/includes.chroot/usr/share/shikshan/themes/`, `branding/wallpapers/` -> `config/includes.chroot/usr/share/backgrounds/shikshan/`, `branding/logo/` -> `config/includes.chroot/usr/share/shikshan/branding/logo/`, and `branding/tokens.json` -> `config/includes.chroot/usr/share/shikshan/branding/tokens.json`"
+  - "sync-ui-to-iso.sh uses `rsync -a --delete` for each tree so removals at source are reflected at destination"
+  - "scripts/build/build-iso.sh invokes `bash scripts/build/sync-ui-to-iso.sh` BEFORE any `lb build` invocation, and aborts on non-zero exit"
+  - "branding/tokens.json is extended (not rewritten) with a `greeter.background_color` and `greeter.text_color` key pair sourced from the palette already declared in SMO-0403"
+  - "tests/build/test_sync_ui_to_iso.sh creates a temp tree, runs sync-ui-to-iso.sh against it, asserts all six rsync destinations exist with the expected files"
+  - "scripts/build/build-iso.sh remains shellcheck-clean (no new warnings)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 45
+  max_files_changed: 5
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0403 (scaffold) merged on main"
+  - "scripts/build/build-iso.sh exists on the working branch"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

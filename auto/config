@@ -22,24 +22,31 @@ IMAGE_TYPE="iso-hybrid"              # USB-stickable + DVD bootable
 # --- Repositories (pinned snapshot) ---
 # config/archives/debian.list.chroot pins to a specific snapshot.debian.org
 # timestamp for reproducibility. Override the upstream mirror to match.
-MIRROR_BOOTSTRAP="https://deb.debian.org/debian/"
+# Bootstrap uses HTTP (not HTTPS): debootstrap verifies via GPG signatures,
+# and HTTPS via debootstrap occasionally fails inside CI containers (no TLS
+# trust store for the bootstrap stage's wget). Downstream apt still uses HTTPS.
+MIRROR_BOOTSTRAP="http://deb.debian.org/debian/"
 MIRROR_BINARY="https://deb.debian.org/debian/"
-MIRROR_CHROOT_SECURITY="https://security.debian.org/"
+MIRROR_CHROOT_SECURITY="http://security.debian.org/"
 MIRROR_BINARY_SECURITY="https://security.debian.org/"
 
 # --- Live system ---
 LB_LINUX_FLAVOURS="amd64"
 LB_INITRAMFS="live-boot"
-LB_UNION_FILESYSTEM="overlay"
 LB_BOOTAPPEND_LIVE="boot=live components quiet splash hostname=shikshan username=student locales=en_IN.UTF-8 keyboard-layouts=us"
 LB_BOOTAPPEND_LIVE_FAILSAFE="boot=live components nopersistent noeject ip=frommedia vga=normal"
 
-# --- Persistence support (encrypted on opt-in per admin policy) ---
-LB_PERSISTENCE="true"
-LB_PERSISTENCE_ENCRYPTION="luks"
+# --- Persistence support ---
+# Modern live-build doesn't expose --persistence / --persistence-encryption to lb config.
+# Persistence is enabled at boot via the `persistence` kernel parameter (add to
+# LB_BOOTAPPEND_LIVE when shipping a persistence variant) plus a persistence.conf
+# file on the live media. LUKS encryption is handled by the user setup script.
+# Tracked: ADR-0007 §persistence.
 
 # --- Memory / kernel ---
-LB_LINUX_PACKAGES="linux-image-amd64"
+# `--linux-packages` is a PREFIX — live-build appends the arch (e.g. "-amd64").
+# Passing "linux-image-amd64" yields "linux-image-amd64-amd64" which doesn't exist.
+LB_LINUX_PACKAGES="linux-image"
 LB_FIRMWARE_CHROOT="true"
 
 # --- APT options ---
@@ -48,8 +55,7 @@ LB_APT_HTTP_PROXY=""
 LB_APT_PIPELINE="3"
 
 # --- Templates and branding ---
-LB_LINUX_FLAVOURS="amd64"
-LB_SYSLINUX_THEME="shikshan"         # config/bootloaders/isolinux uses this
+# LB_SYSLINUX_THEME deferred to Phase-8 SMO-0061 (bootloader assets not yet created)
 
 # --- Run lb config ---
 lb config noauto \
@@ -64,7 +70,6 @@ lb config noauto \
     --linux-flavours "$LB_LINUX_FLAVOURS" \
     --linux-packages "$LB_LINUX_PACKAGES" \
     --initramfs "$LB_INITRAMFS" \
-    --union-filesystem "$LB_UNION_FILESYSTEM" \
     --bootappend-live "$LB_BOOTAPPEND_LIVE" \
     --bootappend-live-failsafe "$LB_BOOTAPPEND_LIVE_FAILSAFE" \
     --firmware-chroot "$LB_FIRMWARE_CHROOT" \

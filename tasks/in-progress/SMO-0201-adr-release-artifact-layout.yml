@@ -1,0 +1,91 @@
+---
+# tasks/open/SMO-0201-adr-release-artifact-layout.yml
+#
+# Phase-2 leading task: ADR-0006 defining the release/artifact bundle layout
+# for ISO + hashes + SBOM + in-toto attestations.
+# Source plan: planner-2 finalisation 2026-05-25.
+
+id: SMO-0201
+title: "Write ADR-0006 release/artifact bundle layout"
+type: adr
+linked_adr: "docs/adr/0006-release-artifact-layout.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0006-release-artifact-layout.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/README.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "scripts/build/build-iso.sh"
+    - "scripts/build/sbom-generate.sh"
+    - "scripts/build/reproduce.sh"
+    - "scripts/verify/verify-iso.sh"
+    - ".gitignore"
+  inputs:
+    adr_number: "0006"
+    slug: "release-artifact-layout"
+    locked_decision: "releases/ is a gitignored output directory with a tracked README explaining the bundle convention"
+    bundle_contents:
+      - "shikshan-mantra-os-<version>-<arch>.iso"
+      - "shikshan-mantra-os-<version>-<arch>.iso.sha256"
+      - "shikshan-mantra-os-<version>-<arch>.iso.sha512"
+      - "shikshan-mantra-os-<version>-<arch>.cdx.json (CycloneDX SBOM)"
+      - "shikshan-mantra-os-<version>-<arch>.spdx.json (SPDX SBOM)"
+      - "shikshan-mantra-os-<version>-<arch>.intoto.jsonl (in-toto attestation)"
+      - "shikshan-mantra-os-<version>-<arch>.intoto.jsonl.sig (cosign signature)"
+      - "MANIFEST.txt (per-file SHA-256 list, human-readable)"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0006-release-artifact-layout.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md structure exactly (MADR 3.x)"
+  - "Status frontmatter is `proposed` with today's date"
+  - "Considered Options enumerates at least three: (a) flat outputs in repo root, (b) gitignored releases/ with tracked README, (c) external artifact registry only"
+  - "Decision Outcome names option (b) — gitignored releases/ + tracked README — as chosen"
+  - "ADR specifies the bundle naming convention `shikshan-mantra-os-<version>-<arch>.<ext>` and enumerates the 8 expected artifacts (iso, sha256, sha512, cdx, spdx, intoto, sig, MANIFEST.txt)"
+  - "ADR specifies that releases/ is in .gitignore (already gitignored via dist/build/out — verify .gitignore alignment in ADR body)"
+  - "Consequences section includes at least 4 bullets covering reproducibility, SLSA L2+ provenance, supply-chain (intoto), and rollback"
+  - "Confirmation section names the tests/scripts that will verify a release bundle (scripts/verify/verify-iso.sh)"
+  - "Rollback plan section specifies how a bad release is recalled (delete from registry, tag retraction, supersede ADR)"
+  - "ADR cross-references SMO-0204 as the implementation task for releases/ path consumption"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "Phase 1 (SMO-0101 through SMO-0106) merged on main"
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0006 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/governance"
+    - "shikshan/release-managers"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

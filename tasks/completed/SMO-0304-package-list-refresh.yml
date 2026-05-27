@@ -1,0 +1,86 @@
+---
+# tasks/open/SMO-0304-package-list-refresh.yml
+#
+# Sanity-check + refresh the package lists against trixie snapshot, document
+# per-list expected installed-size, ensure LXQt+IceWM combined ISO fits the
+# 2 GB profile (target chroot footprint <= 1100 MB so the running image with
+# initramfs + tmpfs + base apps fits 2 GB RAM headroom).
+
+id: SMO-0304
+title: "Refresh LXQt + IceWM + locale + safety + learning package lists for 2 GB profile"
+type: build-config
+linked_adr: "docs/adr/0007-live-build-config-flags.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/package-lists/desktop-lxqt.list.chroot"
+    - "config/package-lists/desktop-icewm-rescue.list.chroot"
+    - "config/package-lists/learning-kolibri.list.chroot"
+    - "config/package-lists/safety-filtering.list.chroot"
+    - "config/package-lists/installer-calamares.list.chroot"
+    - "config/package-lists/locale-hi-en.list.chroot"
+    - "tests/integration/test_package_lists_parse.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0001-debian-live-build.md"
+    - "docs/adr/0007-live-build-config-flags.md"
+    - "config/archives/debian.list.chroot"
+    - "config/package-lists/desktop-lxqt.list.chroot"
+    - "config/package-lists/desktop-icewm-rescue.list.chroot"
+  inputs:
+    ram_ceiling_mb: 2048
+    chroot_footprint_target_mb: 1100
+    upstream_sources:
+      - "https://packages.debian.org/trixie/lxqt-core"
+      - "https://packages.debian.org/trixie/icewm"
+      - "https://packages.debian.org/trixie/calamares"
+      - "https://packages.debian.org/trixie/kolibri"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/integration/test_package_lists_parse.py"
+  coverage_delta: 0.2
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "Each *.list.chroot is shellcheck-clean (treated as commented-line list; no shell syntax)"
+  - "Each *.list.chroot starts with a comment header explaining purpose, the ADR-0007 reference, and the 2 GB profile constraint"
+  - "tests/integration/test_package_lists_parse.py parses every config/package-lists/*.list.chroot, asserts no duplicate package across lists, asserts no empty list, asserts comments use `#` not `;` or `//`"
+  - "tests/integration/test_package_lists_parse.py asserts the union of all lists contains no package from the deny set {`gnome-shell`, `plasma-desktop`, `chromium`, `vlc`} (heavyweight or non-default per PLAN.md)"
+  - "tests/integration/test_package_lists_parse.py asserts the union contains at least one of {`lxqt-core`}, at least one of {`icewm`}, at least one of {`calamares`}, at least one of {`kolibri`}, and the fonts {`fonts-deva` OR `fonts-lohit-deva`}"
+  - "PR body documents the estimated chroot footprint (from `apt-cache show` Installed-Size sums against the snapshot pin), and confirms it is <= 1100 MB"
+  - "PR body confirms each package exists in the snapshot.debian.org/archive/debian/20260520T000000Z/ pin (or links to a Debian Tracker entry)"
+  - "No package version is pinned inline (versions come from the snapshot pin in config/archives/debian.list.chroot — out of scope here)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 200000
+  max_wall_minutes: 90
+  max_files_changed: 7
+  max_diff_lines: 400
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0301 (ADR-0007) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

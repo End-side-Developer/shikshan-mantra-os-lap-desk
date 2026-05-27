@@ -1,0 +1,71 @@
+---
+# tasks/open/SMO-0311-runbook-build-iso-locally.yml
+#
+# Document the dev path. Most contributors are on Windows 11 (the canonical
+# dev host per CLAUDE.md). Live-build requires Linux; WSL2 + Docker Desktop is
+# the supported path. macOS guidance is a stretch-goal.
+
+id: SMO-0311
+title: "Add docs/runbooks/build-iso-locally.md (Windows 11 / WSL2 / Docker Desktop)"
+type: docs
+linked_adr: null
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/runbooks/build-iso-locally.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "scripts/build/build-iso.sh"
+    - "auto/README.md"
+    - ".claude/skills/iso-build/SKILL.md"
+    - "releases/README.md"
+    - "tests/qemu/README.md"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/runbooks/build-iso-locally.md"
+
+S:
+  - "Runbook documents prerequisites for Linux (apt: live-build, qemu-system-x86, ovmf, docker.io OR podman) and the equivalent for Windows 11 (WSL2 with Ubuntu 22.04, Docker Desktop with WSL integration, qemu-system-x86 inside WSL2)"
+  - "Runbook documents the canonical command sequence: clone -> `git checkout main` -> `bash scripts/build/build-iso.sh` -> `bash scripts/verify/verify-iso.sh releases/<bundle>.iso` -> `bash tests/qemu/run-smoke.sh <bundle>.iso`"
+  - "Runbook documents at least 5 troubleshooting entries: (1) Docker Desktop not running, (2) WSL2 missing nested virtualisation for QEMU, (3) snapshot.debian.org pin stale, (4) lintian E: tag, (5) OVMF firmware path different on WSL2 Ubuntu"
+  - "Runbook explicitly notes that hyper-v + WSL2 nested virt is required for KVM acceleration; on systems without it, QEMU falls back to TCG and BIOS+UEFI smokes can exceed the 540s ADR-0008 deadline"
+  - "Runbook references ADR-0006, ADR-0007, ADR-0008 by relative path"
+  - "Runbook references .claude/skills/iso-build/SKILL.md as the agent-facing companion"
+  - "Runbook starts with a 'When to use' section and ends with a 'Forbidden' section mirroring SKILL.md"
+  - "Runbook is markdownlint-clean (no MD line-length warnings; uses ATX headings)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 45
+  max_files_changed: 1
+  max_diff_lines: 500
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0306 (releases/ wiring) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

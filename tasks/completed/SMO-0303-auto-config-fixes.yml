@@ -1,0 +1,89 @@
+---
+# tasks/open/SMO-0303-auto-config-fixes.yml
+#
+# Apply ADR-0007 to auto/config. auto/** is deny-listed (touches-bootloader,
+# CODEOWNERS @shikshan/platform @shikshan/security), so this task MUST be
+# human-authored with allowlist-override + 2 reviewers from 2 distinct teams.
+# Specific defects in current auto/config:
+#   1. `LB_LINUX_FLAVOURS="amd64"` is set twice (lines 31 and 51).
+#   2. `LB_SYSLINUX_THEME="shikshan"` references theme assets that do not exist
+#      under config/bootloaders/isolinux/ — must be removed or filed as Phase-8.
+#   3. `LB_BOOTAPPEND_LIVE_FAILSAFE` is exported but never passed to `lb config`.
+#   4. `LB_PERSISTENCE` and `LB_PERSISTENCE_ENCRYPTION` are exported but never
+#      passed to `lb config` (live-build picks them up via env, but ADR-0007
+#      requires the explicit `--persistence`/`--persistence-encryption` flags
+#      for grep-ability and reproducibility).
+
+id: SMO-0303
+title: "Fix auto/config defects and align with ADR-0007 (human override required)"
+type: build-config
+linked_adr: "docs/adr/0007-live-build-config-flags.md"
+agent: human
+
+I:
+  files_in_scope:
+    - "auto/config"
+    - "tests/smoke/test_auto_config_flags.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0001-debian-live-build.md"
+    - "docs/adr/0007-live-build-config-flags.md"
+    - "auto/config"
+    - "auto/build"
+    - "auto/README.md"
+  inputs:
+    defects:
+      - "duplicate LB_LINUX_FLAVOURS assignment (lines 31 and 51)"
+      - "LB_SYSLINUX_THEME=shikshan references nonexistent assets"
+      - "LB_BOOTAPPEND_LIVE_FAILSAFE never passed to lb config invocation"
+      - "LB_PERSISTENCE / LB_PERSISTENCE_ENCRYPTION not passed as explicit flags"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/smoke/test_auto_config_flags.sh"
+  coverage_delta: 0.2
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "auto/config has exactly one LB_LINUX_FLAVOURS assignment"
+  - "auto/config does not reference LB_SYSLINUX_THEME (removed) OR ships matching assets under config/bootloaders/isolinux/ (out of scope: defer to Phase 8 SMO-0061)"
+  - "auto/config passes --bootappend-live-failsafe to `lb config` literally"
+  - "auto/config passes --persistence true and --persistence-encryption luks (or LB equivalents) explicitly to `lb config`"
+  - "auto/config passes `shellcheck -s sh` cleanly"
+  - "tests/smoke/test_auto_config_flags.sh greps auto/config for each flag enumerated in ADR-0007 and exits non-zero on any miss"
+  - "tests/smoke/test_auto_config_flags.sh asserts there is exactly one LB_LINUX_FLAVOURS line"
+  - "PR carries labels `touches-bootloader` AND `allowlist-override`"
+  - "PR has 2 distinct human reviewers from @shikshan/platform AND @shikshan/security"
+  - "Override entry written to docs/audit/audit.db with action=override on merge"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 60
+  max_files_changed: 2
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 168
+
+preconditions:
+  - "SMO-0301 (ADR-0007) merged on main"
+  - "PR opener applies labels `allowlist-override` and `touches-bootloader`"
+  - "Two human reviewers from @shikshan/platform AND @shikshan/security acknowledge override"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

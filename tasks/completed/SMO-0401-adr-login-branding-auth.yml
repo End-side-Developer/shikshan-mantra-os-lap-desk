@@ -1,0 +1,90 @@
+---
+# tasks/open/SMO-0401-adr-login-branding-auth.yml
+#
+# First task of the login + branding batch. Produces ADR-0009 which locks:
+#   - greeter choice (lightdm-slick-greeter)
+#   - UI source layout (top-level ui/ + branding/)
+#   - institution-login surface (post-login welcome dialog with disabled stub)
+#   - auth-backend OpenAPI contract location
+#
+# Phase-3 small-bounded fast-path: 1 file, type=adr, no protected-path overlap.
+
+id: SMO-0401
+title: "Write ADR-0009 login surface, branding pipeline, auth contract"
+type: adr
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0009-login-branding-auth.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/README.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0007-live-build-config-flags.md"
+    - "policies/protected-paths.yml"
+    - "policies/agent-allowlist.yml"
+    - "policies/sensitive-change-labels.yml"
+    - "config/hooks/live/0030-autologin.hook.chroot"
+    - "config/package-lists/desktop-lxqt.list.chroot"
+  inputs:
+    adr_number: "0009"
+    slug: "login-branding-auth"
+    locked_greeter: "lightdm-slick-greeter"
+    locked_ui_layout: "top-level ui/ + branding/ with sync script"
+    locked_institution_placement: "post-login welcome dialog, disabled stub"
+    locked_auth_contract_path: "docs/architecture/api/auth-v1.yaml"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0009-login-branding-auth.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md structure (MADR 3.x sections preserved)"
+  - "Status frontmatter is `proposed` with date 2026-05-27"
+  - "Considered Options enumerates greeter alternatives (slick-greeter, webkit2-greeter, SDDM, autologin-only), UI-layout alternatives, and institution-login placement alternatives"
+  - "Decision Outcome locks all four choices (greeter, UI layout, institution placement, auth contract path) with one-sentence justifications tied to decision drivers"
+  - "Decision Outcome explicitly preserves the auto-login behaviour of config/hooks/live/0030-autologin.hook.chroot for the live session and gates greeter takeover on /var/lib/shikshan/claimed"
+  - "Consequences section enumerates at least 6 bullets covering RAM budget, allowlist-expansion need, OS-gate vs user-session enforcement, source/payload separation, slick-greeter customisation ceiling, and rollback path"
+  - "Confirmation section names the test files that SMO-0404 through SMO-0408 will add"
+  - "Supply-chain and audit implications section states no change to signing material or audit chain and names lightdm-slick-greeter as the only new upstream package"
+  - "Rollback plan enumerates concrete edits (package-list revert, hook removal, ADR supersession) that undo each decision"
+  - "More Information lists SMO-0401 through SMO-0408 as related tasks, references ADR-0007 and ADR-0006, and names slick-greeter and freedesktop autostart-spec as external sources"
+  - "ADR cross-links policies/agent-allowlist.yml as the file SMO-0402 expands"
+  - "markdownlint-clean (no MD line-length warnings; ATX headings)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "docs/adr/0000-template.md exists on the working branch"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "ADR number 0009 not yet allocated on main"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

@@ -1,0 +1,88 @@
+---
+# tasks/open/SMO-0302-adr-qemu-smoke-criteria.yml
+#
+# ADR-0008 documents what counts as a passing QEMU smoke and why. tests/qemu/
+# scripts already exist but no record explains the lenient success regex,
+# the 540-second deadline, or the 2 GB ceiling.
+
+id: SMO-0302
+title: "Write ADR-0008 QEMU smoke success criteria (BIOS + UEFI, 2 GB RAM, serial markers)"
+type: adr
+linked_adr: "docs/adr/0008-qemu-smoke-criteria.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0008-qemu-smoke-criteria.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0001-debian-live-build.md"
+    - "tests/qemu/README.md"
+    - "tests/qemu/boot-bios.sh"
+    - "tests/qemu/boot-uefi.sh"
+  inputs:
+    adr_number: "0008"
+    slug: "qemu-smoke-criteria"
+    locked_decision: "BIOS + UEFI smokes pass when serial console emits one of {lightdm.*autologin, shikshan.local login} within 540s on a 2048MB VM"
+    matrix:
+      - "bios: qemu-system-x86_64 -m 2048 -cdrom <iso> -boot d -nographic"
+      - "uefi: qemu-system-x86_64 -m 2048 -drive pflash OVMF_CODE -drive pflash OVMF_VARS -cdrom <iso> -boot d -nographic"
+    timeout_s: 540
+    success_regex: "lightdm.*autologin|shikshan.local login"
+    out_of_scope:
+      - "desktop interaction (separate Phase-8 SMO-0090..0093)"
+      - "persistence write/read (separate task)"
+      - "installer flow (separate task)"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0008-qemu-smoke-criteria.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.x) — status=proposed, today's date, decision-makers @shikshan/platform @shikshan/devex"
+  - "Context section explains why a smoke (not a full UI test) and references the 2 GB RAM ceiling from PLAN.md and AGENTS.md §13"
+  - "Decision Outcome states the BIOS + UEFI matrix, 2048MB RAM, 540s deadline, and the exact success regex literally"
+  - "Considered Options enumerates >=3 alternatives for success detection (serial-regex / SSH probe / virtio-console exit-status) with rationale why serial-regex was chosen for a 2 GB live image"
+  - "Considered Options enumerates >=3 alternatives for the RAM size (1024 / 2048 / 4096) with 2048 chosen as the documented ceiling"
+  - "Considered Options enumerates >=3 alternatives for the deadline (300s / 540s / 900s) with rationale referencing snapshot-mirror download cost and slow-device targets"
+  - "Consequences section has >=4 bullets: false-positive risk of regex, no headless GUI probe (gap), CI minutes cost (BIOS + UEFI ~20 min per run), upgrade path to deeper checks"
+  - "Confirmation section names tests/qemu/boot-bios.sh, tests/qemu/boot-uefi.sh, tests/qemu/run-smoke.sh (to be added in SMO-0308), .github/workflows/ci-qemu-smoke.yml (SMO-0310)"
+  - "Rollback plan describes how to widen or narrow the success regex without breaking the contract (semver-like rule: tighten only after one green release; loosen only via a superseding ADR)"
+  - "ADR explicitly out-of-scopes: desktop interaction, persistence write/read, installer flow"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "Phase 2 (SMO-0200..0204) merged on main"
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0008 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

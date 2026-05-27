@@ -1,0 +1,80 @@
+---
+# tasks/open/SMO-0305-hook-smoke-tests.yml
+#
+# Each config/hooks/live/*.hook.chroot already exists but has no test asserting
+# its post-conditions. AGENTS.md §7 + config/hooks/README.md require a
+# tests/smoke/ test per hook. This task closes that gap.
+
+id: SMO-0305
+title: "Add tests/smoke/ shell tests for all four live-build chroot hooks"
+type: tests
+linked_adr: null
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "tests/smoke/test_hook_0010_locale.sh"
+    - "tests/smoke/test_hook_0020_user_student.sh"
+    - "tests/smoke/test_hook_0030_autologin.sh"
+    - "tests/smoke/test_hook_0040_dnsmasq_school_safe.sh"
+    - "tests/smoke/README.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "config/hooks/README.md"
+    - "config/hooks/live/0010-locale-default.hook.chroot"
+    - "config/hooks/live/0020-user-student.hook.chroot"
+    - "config/hooks/live/0030-autologin.hook.chroot"
+    - "config/hooks/live/0040-dnsmasq-school-safe.hook.chroot"
+    - "tests/smoke/test_repo_layout.sh"
+    - "tests/smoke/test_protected_paths_policy.sh"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/smoke/test_hook_0010_locale.sh"
+    - "tests/smoke/test_hook_0020_user_student.sh"
+    - "tests/smoke/test_hook_0030_autologin.sh"
+    - "tests/smoke/test_hook_0040_dnsmasq_school_safe.sh"
+  coverage_delta: 0.5
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "test_hook_0010_locale.sh greps 0010-locale-default.hook.chroot and asserts: shebang `#!/bin/sh`, `set -eu`, locale-gen invocation, presence of `en_IN UTF-8` and `hi_IN UTF-8` lines in the heredoc, update-locale call to en_IN.UTF-8"
+  - "test_hook_0020_user_student.sh asserts: shebang + `set -eu`, adduser with --disabled-password, UID 1000, group memberships in {audio, video, plugdev, netdev}, root passwd -l"
+  - "test_hook_0030_autologin.sh asserts: shebang + `set -eu`, write to /etc/lightdm/lightdm.conf.d/50-shikshan-autologin.conf, autologin-user=student, autologin-session=lxqt"
+  - "test_hook_0040_dnsmasq_school_safe.sh asserts: shebang + `set -eu`, write to /etc/dnsmasq.d/shikshan-school-safe.conf, contains `server=1.1.1.3` and `server=1.0.0.3` (Cloudflare Family DNS), systemctl enable dnsmasq, no-resolv directive"
+  - "Each test exits non-zero on any miss and prints a `FAIL: <reason>` line"
+  - "Each test exits 0 silently on full pass (CI grep-friendly)"
+  - "Each test runs `shellcheck` against the hook under test and reports any new warning as a failure"
+  - "tests/smoke/README.md adds a section enumerating the four new tests and what they assert"
+  - "All four tests are listed in .pre-commit-config.yaml or invoked by an existing smoke runner (note in PR body if downstream wiring is deferred)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 150000
+  max_wall_minutes: 60
+  max_files_changed: 5
+  max_diff_lines: 500
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "Phase 2 (SMO-0200..0204) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

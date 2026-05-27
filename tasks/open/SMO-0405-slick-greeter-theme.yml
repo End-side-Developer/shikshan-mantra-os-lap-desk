@@ -1,0 +1,80 @@
+---
+# tasks/open/SMO-0405-slick-greeter-theme.yml
+#
+# Install lightdm-slick-greeter and apply Shikshan-Mantra branding via
+# slick-greeter.conf. Auto-login (config/hooks/live/0030-autologin.hook.chroot)
+# is preserved unchanged for the live session; the greeter only takes over on
+# installed/claimed systems (marker file /var/lib/shikshan/claimed).
+#
+# Does NOT edit 0030-autologin.hook.chroot — adds a sibling
+# 0031-greeter-theme.hook.chroot.
+
+id: SMO-0405
+title: "Install lightdm-slick-greeter, apply Shikshan branding"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/package-lists/desktop-lxqt.list.chroot"
+    - "branding/greeter/slick-greeter.conf"
+    - "branding/greeter/README.md"
+    - "config/hooks/live/0031-greeter-theme.hook.chroot"
+    - "tests/build/test_greeter_config.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "config/hooks/live/0030-autologin.hook.chroot"
+    - "config/package-lists/desktop-lxqt.list.chroot"
+    - "branding/tokens.json"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_greeter_config.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "branding/greeter/slick-greeter.conf"
+    - "config/hooks/live/0031-greeter-theme.hook.chroot"
+
+S:
+  - "config/package-lists/desktop-lxqt.list.chroot adds `lightdm-slick-greeter` (one new line) without touching existing entries"
+  - "branding/greeter/slick-greeter.conf is a valid INI file with section `[Greeter]` and at minimum: background, logo, theme-name (Adwaita), icon-theme-name, draw-user-backgrounds=false, show-power=true, show-keyboard=false"
+  - "background and logo paths in slick-greeter.conf point to /usr/share/backgrounds/shikshan/default.png and /usr/share/shikshan/branding/logo/shikshan-mantra.svg respectively (these paths are produced by SMO-0404's sync script; missing files do not fail the build, slick-greeter falls back to solid color)"
+  - "config/hooks/live/0031-greeter-theme.hook.chroot is `set -eu`, shellcheck-clean, and: (a) installs branding/greeter/slick-greeter.conf to /etc/lightdm/slick-greeter.conf inside the chroot via /usr/share/shikshan/branding/greeter/slick-greeter.conf source, (b) writes /etc/lightdm/lightdm.conf.d/60-shikshan-greeter.conf that sets `greeter-session=lightdm-slick-greeter`, (c) does NOT remove or modify the 50-shikshan-autologin.conf created by hook 0030"
+  - "Hook 0031 sets the greeter to only activate when /var/lib/shikshan/claimed exists, using a small if-test in the lightdm.conf.d file or an autologin-on-missing-marker pattern documented in branding/greeter/README.md"
+  - "branding/greeter/README.md documents the conf-file fields, the path-fallback behaviour, and the claimed-marker logic"
+  - "tests/build/test_greeter_config.sh asserts: (1) lightdm-slick-greeter line is present in desktop-lxqt.list.chroot exactly once, (2) hook 0031 is executable (mode 0755), (3) hook 0031 shellcheck-clean, (4) slick-greeter.conf parses as INI"
+  - "Hook 0031 numeric prefix > 0030 and < 0040 (insertion order between autologin and dnsmasq hooks)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 45
+  max_files_changed: 5
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0404 (sync script) merged on main"
+  - "config/hooks/live/0030-autologin.hook.chroot exists unchanged on the working branch"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

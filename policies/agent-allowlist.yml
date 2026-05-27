@@ -59,7 +59,11 @@ allow:
   # Build scripts (NOT verify/* and NOT audit/* — those stay in deny)
   - "scripts/build/**"
   - "scripts/dev/**"
+  - "scripts/verify/verify-iso.sh"
 
+  # Phase 2 unblockers
+  - "pyproject.toml"
+  - "releases/**"
   # Vendored upstream sources — manifest + README only.
   # Clone subdirectories (vendor/<name>/) remain denied by
   # policies/protected-paths.yml. Pin updates to MANIFEST.yml require the

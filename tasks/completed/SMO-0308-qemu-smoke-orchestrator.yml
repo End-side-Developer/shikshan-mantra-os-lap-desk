@@ -1,0 +1,70 @@
+---
+# tasks/open/SMO-0308-qemu-smoke-orchestrator.yml
+#
+# Add tests/qemu/run-smoke.sh: orchestrate BIOS + UEFI in sequence, emit
+# JUnit XML for CI ingestion, gather logs under a single timestamped dir.
+
+id: SMO-0308
+title: "Add tests/qemu/run-smoke.sh orchestrator (BIOS+UEFI, JUnit XML, log capture)"
+type: tests
+linked_adr: "docs/adr/0008-qemu-smoke-criteria.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "tests/qemu/run-smoke.sh"
+    - "tests/qemu/README.md"
+    - "tests/integration/test_qemu_run_smoke_xml.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0008-qemu-smoke-criteria.md"
+    - "tests/qemu/boot-bios.sh"
+    - "tests/qemu/boot-uefi.sh"
+    - "tests/qemu/README.md"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/integration/test_qemu_run_smoke_xml.sh"
+  coverage_delta: 0.2
+  sbom_diff: null
+  artifacts: []
+
+S:
+  - "run-smoke.sh accepts `<iso-or-basename>` and resolves identically to boot-bios.sh / boot-uefi.sh"
+  - "run-smoke.sh runs boot-bios.sh and boot-uefi.sh in sequence (BIOS first; UEFI second)"
+  - "run-smoke.sh writes a single timestamped log dir under `${SHIKSHAN_QEMU_LOG_DIR:-tests/qemu/logs}/run-<UTC-ISO8601>/` containing `bios.log` and `uefi.log`"
+  - "run-smoke.sh emits a JUnit-XML file `${SHIKSHAN_QEMU_LOG_DIR:-tests/qemu/logs}/run-<UTC-ISO8601>/junit.xml` with one testcase per matrix entry, status pass/fail, captured stdout in <system-out>"
+  - "run-smoke.sh exit code is 0 only if both legs exit 0; otherwise propagates the first non-zero leg's exit code"
+  - "run-smoke.sh passes `shellcheck`"
+  - "tests/integration/test_qemu_run_smoke_xml.sh stubs boot-bios.sh and boot-uefi.sh via PATH-prepend with deterministic pass/fail combos, asserts: both-pass -> junit.xml has 2 passing testcases and script exits 0; bios-fail-uefi-pass -> junit.xml has 1 failing 1 passing and script exits non-zero"
+  - "tests/qemu/README.md table adds the row `run-smoke.sh | e2e / qemu-smoke | Orchestrates BIOS + UEFI and emits JUnit XML`"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 200000
+  max_wall_minutes: 60
+  max_files_changed: 3
+  max_diff_lines: 500
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0307 (qemu resolution) merged on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/devex"
+
+audit:
+  claimed_at: "2026-05-26T00:00:00Z"
+  claimed_by: "agent:claude-code"
+  first_audit_seq: null
+  last_audit_seq: null
