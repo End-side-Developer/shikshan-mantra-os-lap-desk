@@ -1,0 +1,58 @@
+# config/bootloaders/grub-pc/theme/theme.txt
+# GRUB theme for Shikshan Mantra OS UEFI boot. Colors from branding/tokens.json.
+# Spec: https://www.gnu.org/software/grub/manual/grub/html_node/Theme-file-format.html
+
+title-text:        "Shikshan Mantra OS"
+title-color:       "#F2A900"
+title-font:        "DejaVu Sans Bold 16"
+desktop-image:     "background.png"
+desktop-color:     "#0B1620"
+terminal-box:      "terminal_*.png"
+terminal-font:     "DejaVu Sans Mono 12"
+message-color:     "#FFFFFF"
+message-bg-color:  "#0E4F88"
+
+# --- boot menu container ---
++ boot_menu {
+    left = 15%
+    width = 70%
+    top = 35%
+    height = 45%
+    item_font = "DejaVu Sans 14"
+    item_color = "#FFFFFF"
+    selected_item_color = "#0B1620"
+    selected_item_font = "DejaVu Sans Bold 14"
+    item_height = 32
+    item_padding = 6
+    item_spacing = 4
+    menu_pixmap_style = "menu_*.png"
+    selected_item_pixmap_style = "select_*.png"
+}
+
+# --- progress bar (used during boot countdown) ---
++ progress_bar {
+    id = "__timeout__"
+    left = 25%
+    top = 85%
+    width = 50%
+    height = 16
+    show_text = true
+    font = "DejaVu Sans 12"
+    text_color = "#F7F4EC"
+    fg_color = "#F2A900"
+    bg_color = "#0E4F88"
+    border_color = "#D9D2C0"
+    text = "@TIMEOUT_NOTIFICATION_LONG@"
+}
+
+# --- footer label ---
++ label {
+    top = 95%
+    left = 0
+    width = 100%
+    height = 20
+    align = "center"
+    color = "#D9D2C0"
+    font = "DejaVu Sans 10"
+    text = "Press ENTER to boot, e to edit, c for grub command line"
+}
