@@ -1,0 +1,84 @@
+---
+# tasks/open/SMO-0406-welcome-dialog-firstrun.yml
+#
+# Post-login welcome dialog rendered as an HTML page (opened in the default
+# browser kiosk-style) presenting two login modes:
+#   - Local Student (active button — closes dialog, marks firstrun done)
+#   - Institution Login (rendered, disabled, tooltip "Coming Soon — see SMO-0299")
+#
+# Implemented as an XDG autostart .desktop entry that fires once per user
+# session; firstrun marker at ~/.config/shikshan/welcome-shown.
+
+id: SMO-0406
+title: "Welcome dialog with role picker (Institution stub disabled)"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "ui/login/welcome/index.html"
+    - "ui/login/welcome/styles.css"
+    - "ui/login/welcome/welcome.js"
+    - "ui/login/welcome/README.md"
+    - "config/includes.chroot/etc/xdg/autostart/shikshan-welcome.desktop"
+    - "config/hooks/live/0050-welcome-firstrun.hook.chroot"
+    - "tests/build/test_welcome_autostart.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "config/includes.chroot/usr/share/shikshan/launcher/index.html"
+    - "ui/README.md"
+    - "branding/tokens.json"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_welcome_autostart.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "ui/login/welcome/index.html"
+    - "config/includes.chroot/etc/xdg/autostart/shikshan-welcome.desktop"
+
+S:
+  - "ui/login/welcome/index.html is valid HTML5 with: lang attribute (en + Hindi opt-in via hidden lang switcher), <title>Shikshan Mantra OS — Welcome</title>, one <h1> with the Shikshan Mantra wordmark, two role buttons (data-role=local-student, data-role=institution), the institution button has the `disabled` attribute and a `title=` tooltip explaining the stub status"
+  - "ui/login/welcome/styles.css consumes branding/tokens.json colours via CSS custom properties declared at :root (tokens may be inlined at sync time or hard-coded with a code comment pointing back to tokens.json)"
+  - "ui/login/welcome/welcome.js: on Local Student click, writes ~/.config/shikshan/welcome-shown via a fetch to a localhost helper OR (preferred, simpler) the page is opened by a wrapper shell script in the autostart entry that handles the marker and the page just calls window.close()"
+  - "config/includes.chroot/etc/xdg/autostart/shikshan-welcome.desktop is a valid freedesktop autostart entry with Type=Application, Hidden=false, X-GNOME-Autostart-enabled=true, Exec= invoking a wrapper that (a) checks for ~/.config/shikshan/welcome-shown and exits if present, (b) otherwise opens /usr/share/shikshan/login/welcome/index.html in the default browser windowed (not kiosk for v1), (c) writes the marker on browser exit"
+  - "Hook 0050-welcome-firstrun.hook.chroot installs the autostart wrapper (a small shell script under /usr/local/bin/shikshan-welcome) and ensures the autostart .desktop is in /etc/xdg/autostart"
+  - "Institution button in HTML has class `institution-stub`, the `disabled` attribute, and a visible badge text reading `Coming Soon`"
+  - "ui/login/welcome/README.md documents the firstrun marker path, how to test the dialog manually (`xdg-open /usr/share/shikshan/login/welcome/index.html`), and references SMO-0299 as the issue tracking the institution-login implementation"
+  - "tests/build/test_welcome_autostart.sh asserts: (1) autostart .desktop is freedesktop-valid (Type=Application present, Exec field non-empty), (2) the institution button in index.html carries `disabled`, (3) hook 0050 is mode 0755 and shellcheck-clean"
+  - "No file under config/includes.chroot/usr/share/shikshan/launcher/ is modified (welcome lives at config/includes.chroot/usr/share/shikshan/login/welcome/ via the SMO-0404 sync script)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 60
+  max_files_changed: 7
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0405 (greeter theme) merged on main"
+  - "ui/login/ exists from SMO-0403 scaffold"
+  - "scripts/build/sync-ui-to-iso.sh from SMO-0404 maps ui/login/ to /usr/share/shikshan/login/"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

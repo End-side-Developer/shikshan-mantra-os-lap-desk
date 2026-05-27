@@ -1,0 +1,87 @@
+---
+# tasks/open/SMO-0407-auth-api-contract.yml
+#
+# Freeze the Shikshan Mantra auth-backend API surface as OpenAPI 3.1 and ship
+# the safe-default /etc/shikshan/auth.yml config with its JSON Schema. The
+# lint-manifest skill is taught to validate auth.yml.
+#
+# NO client implementation lands here — only the contract, the config-file
+# schema, and the lint integration. SMO-0299 (hook repairs) will eventually
+# implement the client against this contract.
+
+id: SMO-0407
+title: "Freeze auth API OpenAPI contract + /etc/shikshan/auth.yml schema"
+type: docs
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/architecture/api/auth-v1.yaml"
+    - "docs/architecture/api/README.md"
+    - "config/includes.chroot/etc/shikshan/auth.yml"
+    - "modules/catalogs/schemas/auth-config.schema.json"
+    - ".claude/skills/lint-manifest/SKILL.md"
+    - "tests/policy/test_auth_config_schema.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "modules/catalogs/schemas/module.schema.json"
+    - "modules/catalogs/schemas/catalog.schema.json"
+    - "config/includes.chroot/etc/shikshan/policy.yml"
+    - ".claude/skills/lint-manifest/SKILL.md"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/policy/test_auth_config_schema.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/architecture/api/auth-v1.yaml"
+    - "config/includes.chroot/etc/shikshan/auth.yml"
+    - "modules/catalogs/schemas/auth-config.schema.json"
+
+S:
+  - "docs/architecture/api/auth-v1.yaml is a valid OpenAPI 3.1.0 document (parses with python -c \"import yaml; yaml.safe_load(open('docs/architecture/api/auth-v1.yaml'))\") with info.version=1.0.0 and info.title=\"Shikshan Mantra Auth API\""
+  - "OpenAPI document declares paths: POST /v1/auth/login, POST /v1/auth/refresh, POST /v1/auth/logout — each with request body schema, 200 response schema, 401/403/429 error responses"
+  - "Components.schemas declares LoginRequest (username, password, institution_id [optional, nullable]), TokenResponse (access_token, refresh_token, expires_in, role, profile), RefreshRequest (refresh_token), LogoutRequest (refresh_token), ErrorResponse (code, message, retry_after [optional])"
+  - "Role enum is exactly: student, teacher, admin, institution_admin"
+  - "Security schemes declare bearerAuth (HTTP bearer JWT) applied at the operation level for refresh and logout"
+  - "docs/architecture/api/README.md documents: how to view the spec (e.g., redocly), the relationship to SMO-0299 and SMO-0406, and the explicit out-of-scope items (no client code, no server reference impl)"
+  - "modules/catalogs/schemas/auth-config.schema.json is JSON Schema draft 2020-12 and declares: modes (array of enum [local, institution], required), backend.url (string, format=uri, nullable), backend.ca_cert_path (string, nullable), institution.client_id (string, nullable), institution.endpoint (string, format=uri, nullable), cache_ttl_seconds (integer, minimum=0, default=300)"
+  - "config/includes.chroot/etc/shikshan/auth.yml is valid YAML and validates against auth-config.schema.json with default safe values: modes=[local], backend.url=null, institution.client_id=null, cache_ttl_seconds=300"
+  - "config/includes.chroot/etc/shikshan/auth.yml starts with a header comment block referencing ADR-0009 and SMO-0407"
+  - ".claude/skills/lint-manifest/SKILL.md is updated to add a third validation target: auth.yml against auth-config.schema.json — with a one-line example command added to the SKILL"
+  - "tests/policy/test_auth_config_schema.sh asserts: (1) auth.yml parses as YAML, (2) auth.yml validates against auth-config.schema.json using python jsonschema, (3) auth-v1.yaml parses as YAML and the top-level openapi field equals \"3.1.0\""
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 120000
+  max_wall_minutes: 60
+  max_files_changed: 6
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0401 (ADR-0009) merged on main"
+  - "docs/architecture/ exists on the working branch"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+  - "modules/catalogs/schemas/ directory exists"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

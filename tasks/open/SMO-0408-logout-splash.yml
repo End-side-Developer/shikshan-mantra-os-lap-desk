@@ -1,0 +1,72 @@
+---
+# tasks/open/SMO-0408-logout-splash.yml
+#
+# Theme the LXQt session-leave dialog with Shikshan Mantra branding. This is
+# the "Sign Out" surface — when a user clicks logout from the LXQt panel,
+# lxqt-leave shows a confirm dialog; we re-skin it with the project palette.
+
+id: SMO-0408
+title: "Brand LXQt logout splash with Shikshan Mantra theme tokens"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "ui/themes/shikshan-light/lxqt-leave.qss"
+    - "ui/themes/shikshan-light/README.md"
+    - "config/includes.chroot/etc/xdg/lxqt/lxqt-leave.conf"
+    - "tests/build/test_lxqt_leave_theme.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "ui/README.md"
+    - "branding/tokens.json"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_lxqt_leave_theme.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "ui/themes/shikshan-light/lxqt-leave.qss"
+    - "config/includes.chroot/etc/xdg/lxqt/lxqt-leave.conf"
+
+S:
+  - "ui/themes/shikshan-light/lxqt-leave.qss is a Qt stylesheet that styles the QDialog, its QPushButton children (logout, reboot, shutdown, suspend, cancel), and the QLabel header — colours sourced from branding/tokens.json values (hard-coded with a code comment naming the token key)"
+  - "config/includes.chroot/etc/xdg/lxqt/lxqt-leave.conf is a valid INI file referencing the QSS at /usr/share/shikshan/themes/shikshan-light/lxqt-leave.qss (path produced by SMO-0404 sync script)"
+  - "config/includes.chroot/etc/xdg/lxqt/lxqt-leave.conf sets reasonable defaults: show all four actions (logout, reboot, shutdown, suspend), confirm-before-action=true, default-action=logout"
+  - "ui/themes/shikshan-light/README.md documents the QSS selector targets, the token-key mapping, and how to preview the theme manually (`lxqt-leave` on a test session)"
+  - "tests/build/test_lxqt_leave_theme.sh asserts: (1) the QSS file passes a basic syntax check (no unclosed braces, no unknown @-rules; grep-based heuristic acceptable), (2) lxqt-leave.conf parses as INI and references the synced QSS path"
+  - "No file outside `ui/themes/shikshan-light/`, the test, and the one `config/includes.chroot/etc/xdg/lxqt/` file is modified"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 30
+  max_files_changed: 4
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0404 (sync script) merged on main so ui/themes/ sync mapping is in place"
+  - "SMO-0403 (scaffold) merged so ui/themes/ exists"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/devex"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null

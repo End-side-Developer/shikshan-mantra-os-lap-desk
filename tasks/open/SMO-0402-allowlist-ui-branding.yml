@@ -1,0 +1,81 @@
+---
+# tasks/open/SMO-0402-allowlist-ui-branding.yml
+#
+# One-time policy expansion: add `ui/**` and `branding/**` to
+# policies/agent-allowlist.yml so SMO-0403 onwards can scaffold the trees.
+# policies/** is in policies/protected-paths.yml#deny, so this PR MUST carry
+# `allowlist-override` AND `solo-maintainer-override` labels and is solo-
+# approved by the maintainer per CLAUDE.md Phase-3 relaxation.
+#
+# agent: human — claude-code is blocked by the pre-tool-use protected-paths
+# hook from editing policies/. Cannot be automated.
+
+id: SMO-0402
+title: "Expand agent-allowlist with ui/** and branding/** paths"
+type: build-config
+linked_adr: "docs/adr/0009-login-branding-auth.md"
+agent: human
+
+I:
+  files_in_scope:
+    - "policies/agent-allowlist.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0009-login-branding-auth.md"
+    - "policies/protected-paths.yml"
+    - "policies/agent-allowlist.yml"
+    - "policies/sensitive-change-labels.yml"
+  inputs:
+    new_allow_paths:
+      - "ui/**"
+      - "branding/**"
+    required_labels:
+      - "allowlist-override"
+      - "solo-maintainer-override"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "policies/agent-allowlist.yml"
+
+S:
+  - "policies/agent-allowlist.yml allow: includes `ui/**` and `branding/**` entries with header comments referencing ADR-0009"
+  - "policies/agent-allowlist.yml passes yamllint and any policy-schema validation"
+  - "PR title prefix matches the conventional-commits style used on the repo (e.g. `chore(policy): expand agent allowlist for ui/ branding/ trees (SMO-0402)`)"
+  - "PR body acknowledges the two-team deviation per CLAUDE.md Phase-3"
+  - "PR carries BOTH labels: `allowlist-override` and `solo-maintainer-override`"
+  - "No edits to policies/protected-paths.yml or any other file under policies/"
+  - "Audit row written for the override per scripts/audit/append-entry.py (manual or via CI)"
+  - "All required-status-checks pass on the PR"
+
+R:
+  max_tokens: 20000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 30
+
+T:
+  stale_after_hours: 168
+
+preconditions:
+  - "SMO-0401 (ADR-0009) merged on main"
+  - "Solo maintainer is the PR author and self-approver"
+  - "PR labels `allowlist-override` and `solo-maintainer-override` are present at merge time"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/governance"
+    - "shikshan/platform"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
