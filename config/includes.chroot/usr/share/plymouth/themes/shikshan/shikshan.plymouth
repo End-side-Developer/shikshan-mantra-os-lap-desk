@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Shikshan Mantra OS
+Description=Shikshan Mantra OS boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/shikshan
+ScriptFile=/usr/share/plymouth/themes/shikshan/shikshan.script

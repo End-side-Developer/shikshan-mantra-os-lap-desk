@@ -1,0 +1,42 @@
+#!/bin/sh
+# config/hooks/live/0033-plymouth-default.hook.chroot
+#
+# Set the Shikshan Mantra Plymouth theme as the system default so it
+# shows during boot. SMO-0411 / ADR-0010. The theme files themselves
+# are staged via config/includes.chroot/usr/share/plymouth/themes/shikshan/.
+#
+# Idempotent. Best-effort initramfs regeneration (live-build also
+# regenerates initramfs later in the binary stage).
+
+set -eu
+
+THEME=shikshan
+THEME_DIR=/usr/share/plymouth/themes/${THEME}
+
+# Preconditions: theme files must be present in the chroot.
+if [ ! -f "${THEME_DIR}/${THEME}.plymouth" ]; then
+    echo "0033-plymouth-default: theme descriptor missing at ${THEME_DIR}/${THEME}.plymouth" >&2
+    exit 1
+fi
+
+# Preferred: plymouth-set-default-theme (writes the conf and runs update-initramfs).
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+    plymouth-set-default-theme -R "${THEME}" 2>/dev/null \
+        || plymouth-set-default-theme "${THEME}"
+    echo "0033-plymouth-default: default theme set via plymouth-set-default-theme"
+    exit 0
+fi
+
+# Fallback: write plymouthd.conf directly.
+mkdir -p /etc/plymouth
+cat >/etc/plymouth/plymouthd.conf <<EOF
+[Daemon]
+Theme=${THEME}
+EOF
+chmod 0644 /etc/plymouth/plymouthd.conf
+echo "0033-plymouth-default: wrote /etc/plymouth/plymouthd.conf (fallback)"
+
+# Best-effort initramfs refresh; live-build will run its own pass later.
+if [ -x /usr/sbin/update-initramfs ]; then
+    update-initramfs -u 2>&1 || echo "0033-plymouth-default: update-initramfs deferred to live-build stage"
+fi
