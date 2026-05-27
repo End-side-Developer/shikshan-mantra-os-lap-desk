@@ -1,6 +1,6 @@
 # Phase 4 — Full OS Visual Identity & Branding
 
-**Status:** In Progress
+**Status:** Complete (2026-05-27)
 **ADR:** [ADR-0009](../adr/0009-login-branding-auth.md), [ADR-0010](../adr/0010-bootloader-visual-identity.md)
 **Tasks:** SMO-0401 → SMO-041x
 **Started:** 2026-05-27
@@ -27,8 +27,8 @@ image; only technical credits in About dialogs are acceptable.
 | 5 | Auth API contract | Institution-login backend stub | SMO-0407 ✅ |
 | 6 | Logout / leave dialog splash | Session end | SMO-0408 ✅ |
 | 7 | Calamares installer text + imagery | Install wizard | SMO-0409 ✅ |
-| 8 | **Bootloader menu (syslinux + GRUB-EFI)** | First screen on BIOS/UEFI boot | **SMO-0410 🔲** |
-| 9 | Plymouth boot splash | Kernel → desktop transition | SMO-0411 🔲 |
+| 8 | Bootloader menu (syslinux + GRUB-EFI) | First screen on BIOS/UEFI boot | SMO-0410 ✅ |
+| 9 | Plymouth boot splash | Kernel → desktop transition | SMO-0411 ✅ |
 
 ---
 
@@ -48,12 +48,12 @@ image; only technical credits in About dialogs are acceptable.
 | SMO-0408 | Logout/leave splash (LXQt leave dialog override) | ADR-0009 |
 | SMO-0409 | Calamares installer branding bundle (text + SVG) | ADR-0009 |
 
-### Open
+### Completed (continued)
 
-| Task | Title | ADR | Protected? |
-|------|-------|-----|-----------|
-| **SMO-0410** | Bootloader menu branding (syslinux BIOS + GRUB-EFI) | ADR-0010 | ✅ `touches-bootloader` |
-| SMO-0411 | Plymouth boot splash (shikshan theme) | ADR-0010 | No |
+| Task | Title | ADR |
+|------|-------|-----|
+| SMO-0410 | Bootloader menu branding (syslinux BIOS + GRUB-EFI) | ADR-0010 |
+| SMO-0411 | Plymouth boot splash (shikshan theme) | ADR-0010 |
 
 ---
 
@@ -61,11 +61,11 @@ image; only technical credits in About dialogs are acceptable.
 
 Phase 4 is complete when **all nine surfaces** show Shikshan Mantra branding:
 
-- [ ] Bootloader menu title = "Shikshan Mantra OS" (not "Debian GNU/Linux 13 (trixie)")
-- [ ] Bootloader menu entries = "Shikshan Mantra OS (Live)", "Shikshan Mantra OS (fail-safe)"
-- [ ] GRUB splash graphic = Shikshan Mantra logo (not Debian swirl)
-- [ ] syslinux splash = Shikshan Mantra logo/colors
-- [ ] Plymouth splash = Shikshan Mantra animated logo
+- [x] Bootloader menu title = "Shikshan Mantra OS" (not "Debian GNU/Linux 13 (trixie)")
+- [x] Bootloader menu entries = "Shikshan Mantra OS (Live)", "Shikshan Mantra OS (fail-safe)"
+- [x] GRUB splash graphic = Shikshan Mantra logo (not Debian swirl)
+- [x] syslinux splash = Shikshan Mantra logo/colors
+- [x] Plymouth splash = Shikshan Mantra logo + pulsing caption
 - [x] slick-greeter = Shikshan Mantra themed
 - [x] Desktop wallpaper = Shikshan Mantra
 - [x] Calamares installer = Shikshan Mantra
