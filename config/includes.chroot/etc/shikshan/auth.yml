@@ -1,0 +1,22 @@
+# /etc/shikshan/auth.yml
+# Shikshan Mantra OS auth client configuration.
+# Schema: modules/catalogs/schemas/auth-config.schema.json
+# Contract: docs/architecture/api/auth-v1.yaml
+# Frozen by: ADR-0009 / SMO-0407
+#
+# Safe defaults below — local-only mode, no backend reachable. An admin or
+# installer (Calamares post-install, follow-up task) overwrites this file to
+# enable institution mode.
+
+modes:
+  - local
+
+backend:
+  url: null
+  ca_cert_path: null
+
+institution:
+  client_id: null
+  endpoint: null
+
+cache_ttl_seconds: 300

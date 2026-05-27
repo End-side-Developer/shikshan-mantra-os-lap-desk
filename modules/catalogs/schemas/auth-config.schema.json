@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shikshan-mantra-os/schemas/auth-config.schema.json",
+  "title": "Shikshan Mantra OS auth client configuration",
+  "description": "JSON Schema for /etc/shikshan/auth.yml. Frozen by ADR-0009 / SMO-0407.",
+  "type": "object",
+  "required": ["modes"],
+  "additionalProperties": false,
+  "properties": {
+    "modes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["local", "institution"] },
+      "description": "Active sign-in modes. 'local' is always safe. 'institution' requires backend.* and institution.* to be populated."
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url":          { "type": ["string", "null"], "format": "uri" },
+        "ca_cert_path": { "type": ["string", "null"] }
+      }
+    },
+    "institution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "client_id": { "type": ["string", "null"] },
+        "endpoint":  { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "cache_ttl_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 300,
+      "description": "Token / profile cache TTL in seconds."
+    }
+  }
+}
