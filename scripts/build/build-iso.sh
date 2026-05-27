@@ -50,6 +50,10 @@ fi
 echo "[build-iso] using $RUNTIME with $BUILDER_IMAGE"
 echo "[build-iso] bundle: $BUNDLE_BASE -> $RELEASES_DIR/"
 
+# ── sync ui/ + branding/ into includes.chroot before lb build (ADR-0009) ─────
+echo "[build-iso] syncing ui/ + branding/ sources to config/includes.chroot/"
+bash scripts/build/sync-ui-to-iso.sh
+
 # ── container build ────────────────────────────────────────────────────────────
 "$RUNTIME" run --rm --privileged \
     -v "$REPO_ROOT":/build \
