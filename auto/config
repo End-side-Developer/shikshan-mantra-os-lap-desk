@@ -53,6 +53,9 @@ LB_FIRMWARE_CHROOT="true"
 LB_APT_RECOMMENDS="false"            # 2 GB RAM ceiling — no Recommends by default
 LB_APT_HTTP_PROXY=""
 LB_APT_PIPELINE="3"
+# Disable validity-period check so snapshot.debian.org pins don't expire mid-CI.
+# The pinned timestamp IS the version lock; rolling InRelease TTLs are redundant.
+LB_APT_OPTIONS="Acquire::Check-Valid-Until=false"
 
 # --- Templates and branding ---
 # LB_SYSLINUX_THEME deferred to Phase-8 SMO-0061 (bootloader assets not yet created)
@@ -75,6 +78,7 @@ lb config noauto \
     --firmware-chroot "$LB_FIRMWARE_CHROOT" \
     --apt-recommends "$LB_APT_RECOMMENDS" \
     --apt-pipeline "$LB_APT_PIPELINE" \
+    --apt-options "$LB_APT_OPTIONS" \
     --memtest none \
     --debian-installer none \
     "${@}"
