@@ -58,10 +58,10 @@ LB_APT_PIPELINE="3"
 LB_APT_OPTIONS="-y -o Acquire::Check-Valid-Until=false"
 
 # --- Templates and branding ---
-# LB_SYSLINUX_THEME: set once SMO-0410 (Phase 4, ADR-0010) lands config/bootloaders/
-# assets. live-build picks up config/bootloaders/ automatically; no --syslinux-theme
-# flag needed — the directory override is sufficient. Tracked: SMO-0410.
-# LB_SYSLINUX_THEME=""   # uncomment and set if explicit flag is needed after SMO-0410
+# Bootloader branding (syslinux + GRUB-EFI) is delivered via the directory
+# override at config/bootloaders/, picked up automatically by live-build per
+# the live-manual customization-contents section. No --syslinux-theme flag is
+# needed. See ADR-0010 (docs/adr/0010-bootloader-visual-identity.md).
 
 # --- Run lb config ---
 lb config noauto \
