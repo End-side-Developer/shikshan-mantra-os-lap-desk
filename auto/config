@@ -58,7 +58,10 @@ LB_APT_PIPELINE="3"
 LB_APT_OPTIONS="-y -o Acquire::Check-Valid-Until=false"
 
 # --- Templates and branding ---
-# LB_SYSLINUX_THEME deferred to Phase-8 SMO-0061 (bootloader assets not yet created)
+# LB_SYSLINUX_THEME: set once SMO-0410 (Phase 4, ADR-0010) lands config/bootloaders/
+# assets. live-build picks up config/bootloaders/ automatically; no --syslinux-theme
+# flag needed — the directory override is sufficient. Tracked: SMO-0410.
+# LB_SYSLINUX_THEME=""   # uncomment and set if explicit flag is needed after SMO-0410
 
 # --- Run lb config ---
 lb config noauto \

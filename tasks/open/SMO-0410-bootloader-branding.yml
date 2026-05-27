@@ -1,0 +1,124 @@
+---
+# tasks/open/SMO-0410-bootloader-branding.yml
+#
+# Replace the Debian-default syslinux (BIOS) and GRUB-EFI (UEFI) bootloader
+# menu assets with Shikshan Mantra OS branding.
+#
+# Currently the ISO boot menu shows:
+#   "Debian GNU/Linux 13 (trixie) amd64"
+#   "Live system (amd64)"
+#   "Live system (amd64 fail-safe mode)"
+#
+# After this task it must show:
+#   "Shikshan Mantra OS"
+#   "Shikshan Mantra OS (Live)"
+#   "Shikshan Mantra OS (fail-safe)"
+#
+# PROTECTED PATH: config/bootloaders/** requires touches-bootloader label.
+# Phase-3 override: solo-maintainer-override label + CI green + PR-body deviation note.
+# ADR required and provided: docs/adr/0010-bootloader-visual-identity.md
+
+id: SMO-0410
+title: "Bootloader menu branding (syslinux BIOS + GRUB-EFI)"
+type: build-config
+phase: "4"
+linked_adr: "docs/adr/0010-bootloader-visual-identity.md"
+agent: claude
+
+labels:
+  - touches-bootloader
+  - solo-maintainer-override
+
+I:
+  files_in_scope:
+    # syslinux (BIOS) — live-build looks here for BIOS boot assets
+    - "config/bootloaders/isolinux/live.cfg"
+    - "config/bootloaders/isolinux/menu.cfg"
+    - "config/bootloaders/isolinux/splash.png"
+    - "config/bootloaders/isolinux/isolinux.cfg"
+    # GRUB-EFI — live-build looks here for EFI boot assets
+    - "config/bootloaders/grub-pc/config.cfg"
+    - "config/bootloaders/grub-pc/theme/theme.txt"
+    - "config/bootloaders/grub-pc/theme/background.png"
+    # auto/config — unblock LB_SYSLINUX_THEME variable
+    - "auto/config"
+    # README for protected-path documentation obligation
+    - "config/bootloaders/README.md"
+    # Tests
+    - "tests/build/test_bootloader_branding.sh"
+
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0010-bootloader-visual-identity.md"
+    - "docs/phases/phase-4.md"
+    - "auto/config"
+    - "branding/tokens.json"
+    - "branding/logo/shikshan-mantra.svg"
+    - "config/README.md"
+    - "policies/protected-paths.yml"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_bootloader_branding.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/bootloaders/isolinux/live.cfg"
+    - "config/bootloaders/grub-pc/config.cfg"
+
+S:
+  # --- syslinux (BIOS) ---
+  - "config/bootloaders/isolinux/live.cfg exists and sets MENU TITLE to 'Shikshan Mantra OS'"
+  - "live.cfg contains a DEFAULT entry labeled 'Shikshan Mantra OS (Live)' pointing to the live kernel"
+  - "live.cfg contains a LABEL entry for fail-safe mode labeled 'Shikshan Mantra OS (fail-safe)'"
+  - "live.cfg does NOT contain the string 'Debian' in any menu-visible label or title"
+  - "config/bootloaders/isolinux/splash.png is a valid PNG, exactly 640x480 pixels, with ≤16 colors (isolinux LSS16 constraint), showing the Shikshan Mantra logo or wordmark; upstream source URL and SPDX license recorded in config/bootloaders/README.md"
+  - "config/bootloaders/isolinux/isolinux.cfg includes live.cfg and sets the splash"
+  # --- GRUB-EFI ---
+  - "config/bootloaders/grub-pc/config.cfg sets menuentry titles to 'Shikshan Mantra OS' (default), 'Shikshan Mantra OS (fail-safe)' — no 'Debian' string in title or menuentry labels"
+  - "config/bootloaders/grub-pc/theme/theme.txt is a valid GRUB theme file with title-text: 'Shikshan Mantra OS' and references background.png"
+  - "config/bootloaders/grub-pc/theme/background.png is a valid PNG at 800x600 or 1024x768, showing the Shikshan Mantra logo/wordmark; upstream source URL and SPDX license in config/bootloaders/README.md"
+  # --- auto/config ---
+  - "auto/config: the comment '# LB_SYSLINUX_THEME deferred to Phase-8 SMO-0061' is replaced; LB_SYSLINUX_THEME is set to 'shikshan' or the syslinux theme name that live-build uses for the isolinux directory override, OR the variable is removed if live-build picks up config/bootloaders/ automatically (document which path is used in config/bootloaders/README.md)"
+  # --- README ---
+  - "config/bootloaders/README.md documents: (1) this directory is PROTECTED (touches-bootloader), (2) syslinux splash.png format requirements (640x480, ≤16 colors), (3) GRUB theme format requirements, (4) upstream source URL + SPDX license for every PNG/binary asset, (5) how to regenerate assets from branding/logo/shikshan-mantra.svg"
+  # --- Tests ---
+  - "tests/build/test_bootloader_branding.sh asserts: (1) live.cfg exists, (2) live.cfg MENU TITLE contains 'Shikshan Mantra', (3) live.cfg does NOT contain bare 'Debian' as a title/label, (4) grub config.cfg menuentry titles contain 'Shikshan Mantra', (5) splash.png is 640x480 if pngcheck/identify available (skip gracefully if not), (6) test script is shellcheck-clean, (7) hook numeric ordering not broken"
+  - "tests/build/test_bootloader_branding.sh is executable (mode 0755) and begins with #!/bin/sh set -eu"
+  # --- Constraints ---
+  - "No binary blobs committed without documented upstream source in README.md"
+  - "PR carries labels: touches-bootloader, solo-maintainer-override"
+  - "PR body acknowledges Phase-3 two-team deviation"
+  - "All remaining pre-commit hooks pass (gitleaks, audit hash-chain, exec-bit check, trim-whitespace); SKIP list per CLAUDE.md is acceptable"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 60
+  max_files_changed: 10
+  max_diff_lines: 400
+
+T:
+  stale_after_hours: 96
+
+preconditions:
+  - "SMO-0409 (Calamares branding) is on main — Phase 4 batch 1 complete"
+  - "ADR-0010 (docs/adr/0010-bootloader-visual-identity.md) is on main"
+  - "docs/phases/phase-4.md is on main"
+  - "config/bootloaders/ does NOT exist yet (live-build uses Debian defaults)"
+  - "auto/config line referencing 'Phase-8 SMO-0061' exists and will be updated"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "this task IS the allowlist-override path — confirm labels are set before proceeding"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+    - "shikshan/security"
+
+audit:
+  claimed_at: null
+  claimed_by: null
+  first_audit_seq: null
+  last_audit_seq: null
