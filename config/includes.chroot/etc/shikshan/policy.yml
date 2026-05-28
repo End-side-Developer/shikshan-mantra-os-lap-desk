@@ -32,6 +32,25 @@ allowed_trust_levels:
   - verified-community
 # To allow community/experimental, an admin override is required.
 
+# Vidyarthi practice-engine gates (ADR-0011, SMO-0520)
+# allowed_content_types: which content_type values Vidyarthi may launch.
+#   strict  → interactive-runner (sql/web/code/quiz only) + quiz; ctf excluded
+#   moderate → all, including ctf
+#   open     → all, including ctf + experimental engines
+# Omit this key to use the safety_mode default below.
+allowed_content_types:
+  - interactive-runner
+  - quiz
+
+# allowed_sub_engines: sub-engines permitted within interactive-runner.
+#   Under strict, ctf is excluded. Under moderate/open it is included.
+allowed_sub_engines:
+  - sql
+  - web
+  - code
+  - quiz
+# ctf requires safety_mode: moderate or explicit add below.
+
 # Progress + sync
 sync_endpoint: null                    # null = no sync (default)
 pull_on_sync: false
