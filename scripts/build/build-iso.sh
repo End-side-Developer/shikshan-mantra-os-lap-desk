@@ -55,39 +55,64 @@ echo "[build-iso] syncing ui/ + branding/ sources to config/includes.chroot/"
 bash scripts/build/sync-ui-to-iso.sh
 
 # ── container build ────────────────────────────────────────────────────────────
-# On Windows (MSYS2/Git Bash), POSIX paths like /build get converted to
-# C:/Program Files/Git/build by the shell before Docker sees them.
-# Use cygpath for host-side mounts and // prefix for container-side paths.
+# On Windows (MSYS2/Git Bash) two problems arise:
+#  1. POSIX paths like /build get converted by MSYS2 to C:/Program Files/Git/build.
+#     Fix: use cygpath -w for host-side mounts; // prefix for container-side paths.
+#  2. debootstrap/tar cannot set Linux file permissions on NTFS bind-mounts.
+#     Fix: copy the repo into a Docker-native tmpfs inside the container, run the
+#     full lb build there, then copy just the produced ISO back to the host mount.
+_on_windows=0
 if [ -n "${MSYSTEM:-}" ] || [ "${OS:-}" = "Windows_NT" ]; then
-    _host_root="$(cygpath -w "$REPO_ROOT" 2>/dev/null || echo "$REPO_ROOT")"
-    _host_cache="$(cygpath -w "$REPO_ROOT/.build/cache" 2>/dev/null || echo "$REPO_ROOT/.build/cache")"
-    _workdir="//build"
-    _mount_build="${_host_root}://build"
-    _mount_cache="${_host_cache}://var/cache/apt/archives"
-else
-    _host_root="$REPO_ROOT"
-    _host_cache="$REPO_ROOT/.build/cache"
-    _workdir="/build"
-    _mount_build="${_host_root}:/build"
-    _mount_cache="${_host_cache}:/var/cache/apt/archives"
+    _on_windows=1
 fi
 
-"$RUNTIME" run --rm --privileged \
-    -v "$_mount_build" \
-    -v "$_mount_cache" \
-    -w "$_workdir" \
-    -e DEBIAN_FRONTEND=noninteractive \
-    -e VERSION="$VERSION" \
-    -e ARCH="$ARCH" \
-    "$BUILDER_IMAGE" \
-    bash -c '
-        set -euo pipefail
-        apt-get update -qq
-        apt-get install -y --no-install-recommends \
-            live-build live-boot live-config xorriso syslinux-utils isolinux \
-            grub-pc-bin grub-efi-amd64-bin mtools dosfstools squashfs-tools sudo
-        bash auto/build
-    '
+if [ "$_on_windows" -eq 1 ]; then
+    _host_root="$(cygpath -w "$REPO_ROOT" 2>/dev/null || echo "$REPO_ROOT")"
+    _host_out="$(cygpath -w "$REPO_ROOT/artifacts" 2>/dev/null || echo "$REPO_ROOT/artifacts")"
+    _host_cache="$(cygpath -w "$REPO_ROOT/.build/cache" 2>/dev/null || echo "$REPO_ROOT/.build/cache")"
+    mkdir -p "$REPO_ROOT/artifacts"
+    echo "[build-iso] Windows host: repo will be copied into container tmpfs for build"
+    "$RUNTIME" run --rm --privileged \
+        -v "${_host_root}://repo:ro" \
+        -v "${_host_out}://out" \
+        -v "${_host_cache}://var/cache/apt/archives" \
+        -e DEBIAN_FRONTEND=noninteractive \
+        -e VERSION="$VERSION" \
+        -e ARCH="$ARCH" \
+        "$BUILDER_IMAGE" \
+        bash -c '
+            set -euo pipefail
+            apt-get update -qq
+            apt-get install -y --no-install-recommends \
+                live-build live-boot live-config xorriso syslinux-utils isolinux \
+                grub-pc-bin grub-efi-amd64-bin mtools dosfstools squashfs-tools sudo
+            # Copy repo into native Linux tmpfs so debootstrap/tar can set permissions
+            cp -a //repo/. /build/
+            cd /build
+            bash auto/build
+            # Copy ISO back to host-accessible volume
+            if [ -f artifacts/shikshan.iso ]; then
+                cp artifacts/shikshan.iso //out/shikshan.iso
+            fi
+        '
+else
+    "$RUNTIME" run --rm --privileged \
+        -v "$REPO_ROOT:/build" \
+        -v "$REPO_ROOT/.build/cache:/var/cache/apt/archives" \
+        -w /build \
+        -e DEBIAN_FRONTEND=noninteractive \
+        -e VERSION="$VERSION" \
+        -e ARCH="$ARCH" \
+        "$BUILDER_IMAGE" \
+        bash -c '
+            set -euo pipefail
+            apt-get update -qq
+            apt-get install -y --no-install-recommends \
+                live-build live-boot live-config xorriso syslinux-utils isolinux \
+                grub-pc-bin grub-efi-amd64-bin mtools dosfstools squashfs-tools sudo
+            bash auto/build
+        '
+fi
 
 # ── locate produced ISO ────────────────────────────────────────────────────────
 # auto/build currently writes artifacts/shikshan.iso (pre-SMO-0306b).
