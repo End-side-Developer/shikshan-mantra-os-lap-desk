@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shikshan-mantra-os/modules/catalogs/schemas/exercises/sql.schema.json",
+  "title": "Shikshan Mantra OS — SQL Exercise Spec",
+  "description": "Schema for a single SQL exercise within an interactive-runner module (sub_engine=sql). Validated at module install time by vidyarthi-modulectl validate. Per ADR-0011 (engine IPC) + SMO-0511.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "version", "prompt", "starter_sql",
+    "fixtures", "assertions", "locale"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,62}$",
+      "description": "kebab-case exercise identifier, unique within the module"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "SemVer — bump on any content change so xAPI object URNs stay stable"
+    },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "hi"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "hi": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      },
+      "description": "Human-readable exercise prompt shown to the learner. Hindi + English parity required."
+    },
+    "starter_sql": {
+      "type": "string",
+      "description": "Pre-filled SQL shown in the editor when the exercise loads. May be empty string for blank-slate exercises."
+    },
+    "fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "description": "Relative path within module bundle to a .sql seed file (e.g. fixtures/employees.sql)"
+      },
+      "description": "SQL files executed in order to populate the in-memory SQLite DB before the learner's query runs."
+    },
+    "assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "result_equals",
+              "result_contains_row",
+              "row_count",
+              "column_names",
+              "no_error",
+              "query_matches_regex"
+            ]
+          },
+          "expected": {
+            "description": "Expected value — shape depends on kind. result_equals: array of row-objects. row_count: integer. column_names: array of strings. query_matches_regex: regex string."
+          },
+          "message": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["en", "hi"],
+            "properties": {
+              "en": { "type": "string", "minLength": 1 },
+              "hi": { "type": "string", "minLength": 1 }
+            },
+            "description": "Failure message shown to the learner if this assertion fails."
+          }
+        }
+      },
+      "description": "Ordered list of grading assertions. All must pass for score=100."
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["en", "hi"],
+        "properties": {
+          "en": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "hi": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      },
+      "description": "Progressive hints revealed on repeated failed attempts. Optional."
+    },
+    "rubric": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pass_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 100,
+          "description": "Minimum score (0–100) to mark the exercise as completed in xAPI."
+        },
+        "partial_credit": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, score = (assertions_passed / assertions_total) * 100. If false, any failure scores 0."
+        }
+      },
+      "description": "Scoring rules. Optional — defaults to pass_threshold=100, partial_credit=false."
+    },
+    "locale": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["en", "hi"] },
+      "uniqueItems": true,
+      "description": "Languages in which prompt and hints are provided."
+    },
+    "max_execution_ms": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 30000,
+      "default": 5000,
+      "description": "Hard timeout for the learner's query inside the sql.js WASM runtime. Defaults to 5 000 ms."
+    }
+  }
+}
