@@ -1,0 +1,22 @@
+id: group-by-department
+version: "1.0.0"
+prompt:
+  en: "Return each department name with the count of its employees, ordered by count descending."
+  hi: "प्रत्येक विभाग का नाम और उसके कर्मचारियों की संख्या लौटाएँ, घटते क्रम में।"
+starter_sql: "SELECT "
+fixtures:
+  - "content/fixtures/employees.sql"
+assertions:
+  - kind: no_error
+    message:
+      en: "Your query must run without error."
+      hi: "क्वेरी बिना त्रुटि चलनी चाहिए।"
+  - kind: row_count
+    expected: 3
+    message:
+      en: "Expected 3 rows — one per department."
+      hi: "3 पंक्तियाँ अपेक्षित हैं — प्रत्येक विभाग के लिए।"
+hints:
+  - en: "Use JOIN with departments, GROUP BY departments.name, and COUNT(*)."
+    hi: "JOIN, GROUP BY departments.name, और COUNT(*) उपयोग करें।"
+locale: ["en", "hi"]

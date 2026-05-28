@@ -1,0 +1,37 @@
+id: sql-basics
+version: "1.0.0"
+title:
+  en: "SQL Basics"
+  hi: "SQL की मूल बातें"
+description:
+  en: "Learn SQL from SELECT to JOIN with interactive exercises."
+  hi: "इंटरैक्टिव अभ्यासों के साथ SELECT से JOIN तक SQL सीखें।"
+language: [en, hi]
+age_band: "16-18"
+difficulty: beginner
+prerequisites: []
+outcomes:
+  - en: "Write a SELECT query to retrieve all rows from a table."
+    hi: "तालिका की सभी पंक्तियाँ प्राप्त करने के लिए SELECT क्वेरी लिखें।"
+  - en: "Filter rows using WHERE with a JOIN."
+    hi: "JOIN के साथ WHERE का उपयोग करके पंक्तियाँ फ़िल्टर करें।"
+  - en: "Aggregate results using GROUP BY and COUNT."
+    hi: "GROUP BY और COUNT का उपयोग करके परिणाम एकत्रित करें।"
+content_type: interactive-runner
+sub_engine: sql
+entrypoint: "content/exercises/"
+exercise_spec:
+  fixtures:
+    - "content/fixtures/employees.sql"
+  exercises:
+    - "content/exercises/01-select.yml"
+    - "content/exercises/02-where.yml"
+    - "content/exercises/03-join.yml"
+required_apps:
+  - python3
+  - python3-yaml
+unlock_rules:
+  - kind: free
+license: CC-BY-SA-4.0
+checksum: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+signature: null
