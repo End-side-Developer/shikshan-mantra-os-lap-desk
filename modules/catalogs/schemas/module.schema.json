@@ -75,11 +75,25 @@
     },
     "content_type": {
       "type": "string",
-      "enum": ["html", "pdf", "video", "webxr", "blockly", "python", "jupyter"]
+      "enum": [
+        "html", "pdf", "video", "webxr", "blockly", "python", "jupyter",
+        "interactive-runner",
+        "quiz"
+      ],
+      "description": "interactive-runner and quiz are Vidyarthi engine types (ADR-0011, SMO-0510)"
+    },
+    "sub_engine": {
+      "type": "string",
+      "enum": ["sql", "web", "code", "ctf", "quiz"],
+      "description": "Required when content_type is interactive-runner. Selects the Vidyarthi engine subprocess."
+    },
+    "exercise_spec": {
+      "type": "object",
+      "description": "Engine-specific exercise specification. Shape validated against modules/catalogs/schemas/exercises/<sub_engine>.schema.json at module install time."
     },
     "entrypoint": {
       "type": "string",
-      "description": "Relative path inside the module bundle (e.g., index.html, main.py)"
+      "description": "Relative path inside the module bundle (e.g., index.html, main.py). For interactive-runner modules this is typically exercises/ directory."
     },
     "required_apps": {
       "type": "array",
