@@ -1,0 +1,42 @@
+/* ui/themes/shikshan-light/lxqt-leave.qss
+   Branded styling for the lxqt-leave session-end dialog. ADR-0009 / SMO-0408.
+   Colour values are inlined; comments name the source key in branding/tokens.json. */
+
+QDialog {
+    background-color: #F7F4EC;   /* tokens.colors.background_light */
+    color:            #1A1A1A;   /* tokens.colors.text_primary */
+    font-family: "Noto Sans", "Noto Sans Devanagari", "DejaVu Sans", sans-serif;
+    font-size: 14px;
+}
+
+QLabel {
+    color: #0E4F88;              /* tokens.colors.primary */
+    font-size: 18px;
+    font-weight: 600;
+    padding: 8px 0;
+}
+
+QPushButton {
+    background-color: #FFFFFF;   /* tokens.colors.surface */
+    color:            #1A1A1A;   /* tokens.colors.text_primary */
+    border: 2px solid #D9D2C0;   /* tokens.colors.border_subtle */
+    border-radius: 8px;          /* tokens.spacing.radius_md */
+    padding: 10px 18px;
+    min-width: 100px;
+}
+
+QPushButton:hover { border-color: #0E4F88; }  /* tokens.colors.primary */
+QPushButton:focus { border-color: #F2A900; }  /* tokens.colors.secondary */
+
+QPushButton#logout {
+    background-color: #0E4F88;   /* tokens.colors.primary */
+    color:            #FFFFFF;   /* tokens.colors.text_on_primary */
+    border-color:     #0E4F88;
+}
+
+QPushButton#reboot,
+QPushButton#shutdown,
+QPushButton#suspend,
+QPushButton#cancel {
+    /* secondary actions inherit default QPushButton styling above */
+}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="shikshan-mantra-title">
+  <title id="shikshan-mantra-title">Shikshan Mantra</title>
+  <desc>Project mark for Shikshan Mantra OS — knowledge flame above an open book on a deep-blue disc with a gold inner ring.</desc>
+
+  <!-- Background disc (primary) -->
+  <circle cx="128" cy="128" r="120" fill="#0E4F88"/>
+
+  <!-- Inner ring (secondary) -->
+  <circle cx="128" cy="128" r="100" fill="none" stroke="#F2A900" stroke-width="3"/>
+
+  <!-- Knowledge flame / lotus petal (secondary) -->
+  <path d="M 128 56
+           C  98 92, 108 134, 128 162
+           C 148 134, 158 92, 128 56
+           Z" fill="#F2A900"/>
+
+  <!-- Inner flame highlight (background_light) -->
+  <path d="M 128 86
+           C 116 108, 120 134, 128 150
+           C 136 134, 140 108, 128 86
+           Z" fill="#F7F4EC"/>
+
+  <!-- Open book base (background_light) -->
+  <rect x="74" y="174" width="108" height="16" rx="3" fill="#F7F4EC"/>
+
+  <!-- Book spine -->
+  <line x1="128" y1="174" x2="128" y2="190" stroke="#0E4F88" stroke-width="2"/>
+
+  <!-- Page lines -->
+  <line x1="84"  y1="182" x2="120" y2="182" stroke="#0E4F88" stroke-width="1" opacity="0.5"/>
+  <line x1="136" y1="182" x2="172" y2="182" stroke="#0E4F88" stroke-width="1" opacity="0.5"/>
+</svg>

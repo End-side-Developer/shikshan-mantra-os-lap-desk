@@ -69,6 +69,7 @@ desktop.ini
 .claude/settings.local.json
 .claude/.session/
 .claude/.cache/
+.claude/scheduled_tasks.lock
 
 # Pre-commit
 .pre-commit-cache/

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shikshan Mantra OS &mdash; Welcome</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="welcome">
+    <header class="brand">
+      <img class="logo" src="/usr/share/shikshan/branding/logo/shikshan-mantra.svg" alt="" aria-hidden="true">
+      <h1 class="wordmark">
+        <span class="word-en">Shikshan Mantra</span>
+        <span class="word-hi" lang="hi" aria-hidden="true">शिक्षण मंत्र</span>
+      </h1>
+      <p class="tagline">Choose how you want to sign in.</p>
+    </header>
+
+    <section class="role-picker" aria-label="Sign-in mode">
+      <button class="role-button"
+              data-role="local-student"
+              type="button">
+        <span class="label">Local Student</span>
+        <span class="hint">Sign in with this device only. Works offline.</span>
+      </button>
+
+      <button class="role-button institution-stub"
+              data-role="institution"
+              type="button"
+              disabled
+              aria-disabled="true"
+              title="Coming Soon — institution login implementation is tracked in SMO-0299.">
+        <span class="label">Institution Login</span>
+        <span class="badge">Coming Soon</span>
+        <span class="hint">Sign in with your school or institution ID.</span>
+      </button>
+    </section>
+
+    <footer class="legal">
+      <small>Shikshan Mantra OS &middot; First-login welcome &middot; ADR-0009</small>
+    </footer>
+  </main>
+
+  <script src="welcome.js"></script>
+</body>
+</html>
