@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shikshan-mantra-os/modules/catalogs/schemas/exercises/code.schema.json",
+  "title": "Shikshan Mantra OS — Code Exercise Spec (skeleton)",
+  "description": "Schema for a live code exercise (sub_engine=code). Skeleton — engine implementation arrives in SMO-0600+. Validated at install time. SMO-0513.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "prompt", "language", "starter_code", "test_cases", "locale"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,62}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "hi"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "hi": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      }
+    },
+    "language": {
+      "type": "string",
+      "enum": ["python"],
+      "description": "Execution language. Only python supported in v1 (Phase-3)."
+    },
+    "starter_code": {
+      "type": "string",
+      "description": "Pre-filled code shown in the editor. May be empty string."
+    },
+    "test_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input", "expected_output"],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "stdin fed to the sandboxed process"
+          },
+          "expected_output": {
+            "type": "string",
+            "description": "Expected stdout (exact match after strip)"
+          },
+          "hidden": {
+            "type": "boolean",
+            "default": false,
+            "description": "Hidden test cases are not shown to the learner but still grade"
+          }
+        }
+      }
+    },
+    "hints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["en", "hi"],
+        "properties": {
+          "en": { "type": "string", "minLength": 1 },
+          "hi": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "max_execution_ms": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 30000,
+      "default": 10000
+    },
+    "locale": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["en", "hi"] },
+      "uniqueItems": true
+    }
+  }
+}
