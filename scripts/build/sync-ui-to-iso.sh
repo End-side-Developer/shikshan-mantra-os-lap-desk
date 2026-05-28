@@ -29,9 +29,29 @@ WALL_DST="$DST_ROOT/usr/share/backgrounds/shikshan"
 echo "[sync-ui-to-iso] SRC_ROOT=$SRC_ROOT"
 echo "[sync-ui-to-iso] DST_ROOT=$DST_ROOT"
 
+# sync_dir SRC DST — rsync with --delete when available, cp fallback on Windows
+sync_dir() {
+    src="$1"; dst="$2"
+    if command -v rsync >/dev/null 2>&1; then
+        rsync -a --delete "$src" "$dst"
+    else
+        rm -rf "$dst"
+        mkdir -p "$dst"
+        cp -r "$src/." "$dst/"
+    fi
+}
+
+sync_file() {
+    src="$1"; dst="$2"
+    if command -v rsync >/dev/null 2>&1; then
+        rsync -a "$src" "$dst"
+    else
+        cp "$src" "$dst"
+    fi
+}
+
 if ! command -v rsync >/dev/null 2>&1; then
-    echo "[sync-ui-to-iso] need rsync on host (apt install rsync)" >&2
-    exit 1
+    echo "[sync-ui-to-iso] rsync not found; using cp fallback (Windows host)"
 fi
 
 mkdir -p \
@@ -41,12 +61,12 @@ mkdir -p \
     "$UI_DST/branding/logo" \
     "$WALL_DST"
 
-rsync -a --delete "$SRC_ROOT/ui/launcher/"          "$UI_DST/launcher/"
-rsync -a --delete "$SRC_ROOT/ui/login/"             "$UI_DST/login/"
-rsync -a --delete "$SRC_ROOT/ui/themes/"            "$UI_DST/themes/"
-rsync -a --delete "$SRC_ROOT/branding/wallpapers/"  "$WALL_DST/"
-rsync -a --delete "$SRC_ROOT/branding/logo/"        "$UI_DST/branding/logo/"
-rsync -a          "$SRC_ROOT/branding/tokens.json"  "$UI_DST/branding/tokens.json"
+sync_dir "$SRC_ROOT/ui/launcher/"          "$UI_DST/launcher"
+sync_dir "$SRC_ROOT/ui/login/"             "$UI_DST/login"
+sync_dir "$SRC_ROOT/ui/themes/"            "$UI_DST/themes"
+sync_dir "$SRC_ROOT/branding/wallpapers/"  "$WALL_DST"
+sync_dir "$SRC_ROOT/branding/logo/"        "$UI_DST/branding/logo"
+sync_file "$SRC_ROOT/branding/tokens.json" "$UI_DST/branding/tokens.json"
 
 # Strip .gitkeep markers from synced destinations so they don't ship on the ISO.
 find "$UI_DST" "$WALL_DST" -name '.gitkeep' -type f -delete 2>/dev/null || true

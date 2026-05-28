@@ -55,10 +55,27 @@ echo "[build-iso] syncing ui/ + branding/ sources to config/includes.chroot/"
 bash scripts/build/sync-ui-to-iso.sh
 
 # ── container build ────────────────────────────────────────────────────────────
+# On Windows (MSYS2/Git Bash), POSIX paths like /build get converted to
+# C:/Program Files/Git/build by the shell before Docker sees them.
+# Use cygpath for host-side mounts and // prefix for container-side paths.
+if [ -n "${MSYSTEM:-}" ] || [ "${OS:-}" = "Windows_NT" ]; then
+    _host_root="$(cygpath -w "$REPO_ROOT" 2>/dev/null || echo "$REPO_ROOT")"
+    _host_cache="$(cygpath -w "$REPO_ROOT/.build/cache" 2>/dev/null || echo "$REPO_ROOT/.build/cache")"
+    _workdir="//build"
+    _mount_build="${_host_root}://build"
+    _mount_cache="${_host_cache}://var/cache/apt/archives"
+else
+    _host_root="$REPO_ROOT"
+    _host_cache="$REPO_ROOT/.build/cache"
+    _workdir="/build"
+    _mount_build="${_host_root}:/build"
+    _mount_cache="${_host_cache}:/var/cache/apt/archives"
+fi
+
 "$RUNTIME" run --rm --privileged \
-    -v "$REPO_ROOT":/build \
-    -v "$REPO_ROOT/.build/cache":/var/cache/apt/archives \
-    -w /build \
+    -v "$_mount_build" \
+    -v "$_mount_cache" \
+    -w "$_workdir" \
     -e DEBIAN_FRONTEND=noninteractive \
     -e VERSION="$VERSION" \
     -e ARCH="$ARCH" \
