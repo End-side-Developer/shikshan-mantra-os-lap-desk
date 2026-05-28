@@ -9,7 +9,7 @@ Rules-Requires-Root: no
 Package: shikshan-vidyarthi
 Section: education
 Architecture: all
-Depends: ${misc:Depends}, python3 (>= 3.11), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-gtksourceview-5, libadwaita-1-0
+Depends: ${misc:Depends}, python3 (>= 3.11), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-gtksource-5, libadwaita-1-0
 Description: Vidyarthi practice runtime for Shikshan Mantra OS — frontend, no engine
 
 Package: shikshan-engines-core
