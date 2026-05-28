@@ -1,0 +1,29 @@
+# sandbox.bwrap — bubblewrap invocation profile for the Vidyarthi SQL engine
+# (ADR-0015, SMO-0570)
+#
+# Usage (from the launcher / engine_host.py):
+#   bwrap $(cat /path/to/sandbox.bwrap) \
+#         --ro-bind /module /module \
+#         --seccomp 7 \
+#         /engine/main.py
+#
+# The launcher substitutes /module with the actual bundle path and /engine
+# with the engine binary directory before exec.
+
+--ro-bind /usr /usr
+--ro-bind /lib /lib
+--ro-bind /lib64 /lib64
+--ro-bind /bin /bin
+--ro-bind /sbin /sbin
+--ro-bind /etc/alternatives /etc/alternatives
+--ro-bind /etc/ld.so.conf /etc/ld.so.conf
+--ro-bind /etc/ld.so.conf.d /etc/ld.so.conf.d
+--tmpfs /tmp
+--proc /proc
+--dev /dev
+--unshare-net
+--unshare-pid
+--unshare-ipc
+--unshare-uts
+--die-with-parent
+--new-session
