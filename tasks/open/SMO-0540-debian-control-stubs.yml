@@ -1,0 +1,106 @@
+---
+# tasks/open/SMO-0540-debian-control-stubs.yml
+#
+# Stub debian/ packaging metadata for shikshan-vidyarthi and
+# shikshan-engines-core. Binaries are NOT built here — the binary work is
+# deferred. This task only registers the package names so downstream
+# live-build can reference them.
+#
+# IMPORTANT — ALLOWLIST FLAG:
+#   debian/** is NOT currently in policies/agent-allowlist.yml `allow:`.
+#   This task therefore requires either:
+#     (a) a prior allowlist expansion task adding `debian/**` to allow:
+#         (would need an `allowlist-override` + `solo-maintainer-override`
+#         labeled PR per CLAUDE.md), OR
+#     (b) reclassification of this task to type:adr and rewriting as a
+#         pure ADR describing the future packaging layout, with the actual
+#         debian/ files filed under a follow-up task once allowlist is
+#         expanded.
+#   See preconditions for the hard gate.
+
+id: SMO-0540
+title: "debian/control stubs for shikshan-vidyarthi and shikshan-engines-core"
+type: build-config
+linked_adr: "docs/adr/0012-frontend-stack.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "debian/control"
+    - "debian/changelog"
+    - "debian/copyright"
+    - "debian/source/format"
+    - "debian/rules"
+    - "tests/build/test_debian_control_stubs.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "policies/agent-allowlist.yml"
+    - "policies/protected-paths.yml"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0012-frontend-stack.md"
+  inputs:
+    packages_to_declare:
+      shikshan-vidyarthi:
+        section: "education"
+        architecture: "all"
+        depends: "python3 (>= 3.11), python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-gtksourceview-5, libadwaita-1-0"
+        description: "Vidyarthi practice runtime for Shikshan Mantra OS — frontend, no engine"
+      shikshan-engines-core:
+        section: "education"
+        architecture: "all"
+        depends: "shikshan-vidyarthi (= ${binary:Version}), bubblewrap, libseccomp2"
+        description: "Vidyarthi core engines (sql, quiz) for Shikshan Mantra OS"
+    locked_decision: "Two source packages (or one source producing two binary packages) cover the v1 surface: shikshan-vidyarthi (the frontend) and shikshan-engines-core (the sql + quiz engines). debian/source/format = '3.0 (native)' for v1; we will switch to a non-native format if/when we ship outside live-build. debian/rules uses dh with --buildsystem=meson once binaries land; for now it's a stub that exits 0 to make sbuild happy."
+    flag_for_human: "debian/** is not in agent-allowlist as of 2026-05-28. Pre-condition gate (below) blocks this task until the allowlist is expanded or the task is reclassified."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_debian_control_stubs.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "debian/control"
+    - "debian/changelog"
+    - "debian/copyright"
+    - "debian/source/format"
+    - "debian/rules"
+
+S:
+  - "debian/control declares Source: shikshan-vidyarthi, Section: education, Priority: optional, Maintainer matching git config user.name + email, Standards-Version: 4.6.2 or newer"
+  - "debian/control declares two binary stanzas matching inputs.packages_to_declare (shikshan-vidyarthi and shikshan-engines-core) with the exact Section, Architecture, Depends, Description from the inputs"
+  - "debian/changelog is a single entry for shikshan-vidyarthi (1.0.0~vidyarthi-mvp-0) in UNRELEASED with 'Initial packaging stubs for SMO-0540; binaries land in a follow-up task'"
+  - "debian/copyright is in machine-readable DEP-5 format with Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/, names the project, SPDX-License-Identifier matching repo LICENSE"
+  - "debian/source/format contains the single line '3.0 (native)' per inputs.locked_decision"
+  - "debian/rules is `#!/usr/bin/make -f`, mode 0755, with a single dh-driven %: target whose body is `dh $@` AND a `override_dh_auto_build` target whose body is `:` (no-op) so the package builds cleanly without binaries"
+  - "tests/build/test_debian_control_stubs.sh is `#!/usr/bin/env bash`, set -euo pipefail, shellcheck-clean, mode 0755, asserts: (1) debian/control parses with `dpkg-parsechangelog -l debian/changelog` returning exit 0 OR with grep for required fields if dpkg-dev not available, (2) debian/source/format == '3.0 (native)', (3) debian/rules starts with `#!/usr/bin/make -f`, (4) both binary stanzas (shikshan-vidyarthi, shikshan-engines-core) appear in debian/control"
+  - "All files validate with `lintian -c debian/control` when lintian is available (best-effort; test passes if lintian is missing)"
+  - "PR body MUST acknowledge the debian/** allowlist gap and reference this task's preconditions"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 40
+  max_files_changed: 6
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "BLOCKING: debian/** must be in policies/agent-allowlist.yml `allow:` OR this task carries an `allowlist-override` + `solo-maintainer-override` labeled PR. If neither is true at claim time, this task MUST be moved to tasks/blocked/ with label needs-human and a comment requesting allowlist expansion."
+  - "SMO-0501 (ADR-0012 frontend stack) is on main — package Depends derive from it"
+  - "SMO-0504 (ADR-0015 sandbox) is on main — shikshan-engines-core Depends on bubblewrap"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

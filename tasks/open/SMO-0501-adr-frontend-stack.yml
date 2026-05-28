@@ -1,0 +1,76 @@
+---
+# tasks/open/SMO-0501-adr-frontend-stack.yml
+#
+# Locks the Vidyarthi frontend technology stack: PyGObject + libadwaita
+# + GtkSourceView. Required before SMO-0550 (meson skeleton) may claim.
+
+id: SMO-0501
+title: "Write ADR-0012 frontend stack: PyGObject + libadwaita + GtkSourceView"
+type: adr
+linked_adr: "docs/adr/0012-frontend-stack.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0012-frontend-stack.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0011-engine-ipc.md"
+  inputs:
+    adr_number: "0012"
+    slug: "frontend-stack"
+    locked_decision: "Vidyarthi frontend is a PyGObject (Python 3.11+) application using GTK 4 + libadwaita for chrome and GtkSourceView 5 for code/SQL editing surfaces. UI is built with Blueprint (.blp) compiled to .ui at build time. Packaged as a system app under /usr/share/shikshan/vidyarthi with a /usr/bin/vidyarthi launcher; uses Meson for orchestration."
+    rejected_alternatives:
+      - "gtk4-rs (Rust): adds Rust toolchain to ISO build (size + bootstrap cost on snapshot.debian.org); team velocity is Python-first"
+      - "Vala: smaller community, fewer educational examples, harder for student-contributors to read"
+      - "Electron / Tauri: 100+ MB per app, conflicts with 2 GB RAM target and reproducible-build story"
+      - "Flutter Desktop: deferred to authoring track per ADR-0016 (it ships later, not now)"
+      - "Qt / PyQt: licensing complexity (LGPL boundary), and we'd lose libadwaita's adaptive widgets"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0012-frontend-stack.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.0.0) — frontmatter status=proposed, today's date, decision-makers field equals [\"@shikshan/platform\"]"
+  - "Context section explains why the choice matters now (SMO-0550 meson skeleton blocks on this decision) and references PLAN.md"
+  - "Considered Options section enumerates at least 3 alternatives from inputs.rejected_alternatives with one-paragraph rationale each"
+  - "Decision Outcome names the exact dependency set: python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-gtksourceview-5, libadwaita-1-0, gtk4, meson, blueprint-compiler"
+  - "Decision Outcome states the launcher path /usr/bin/vidyarthi (symlink or thin shell wrapper into /usr/share/shikshan/vidyarthi/src/main.py)"
+  - "Consequences section has at least 4 bullets covering: 2 GB RAM headroom impact, snapshot.debian.org reproducibility for the chosen stack, accessibility wins from libadwaita, debuggability of Python tracebacks via stderr"
+  - "Confirmation section names tests/build/test_vidyarthi_skeleton.sh (SMO-0550) as the smoke check"
+  - "Rollback plan paragraph describes how to revert (supersede ADR-0012 + remove vidyarthi.list.chroot + remove /usr/share/shikshan/vidyarthi/)"
+  - "ADR cross-references SMO-0550 (meson skeleton), SMO-0560 (engine wiring uses GtkSourceView), SMO-0505 (authoring track ADR-0016)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main — the IPC layer this frontend will drive"
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0012 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

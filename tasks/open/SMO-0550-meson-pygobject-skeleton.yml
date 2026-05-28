@@ -1,0 +1,79 @@
+---
+# tasks/open/SMO-0550-meson-pygobject-skeleton.yml
+#
+# Land the Meson + PyGObject application skeleton for Vidyarthi. Catalog
+# browse stub only — no engine subprocess wiring yet (that's SMO-0560).
+
+id: SMO-0550
+title: "Meson skeleton + PyGObject hello-world launcher (catalog browse only)"
+type: build-config
+linked_adr: "docs/adr/0012-frontend-stack.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/meson.build"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/main.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/window.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/data/ui/window.blp"
+    - "config/package-lists/vidyarthi.list.chroot"
+    - "tests/build/test_vidyarthi_skeleton.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0012-frontend-stack.md"
+  inputs:
+    app_id: "in.shikshan.Vidyarthi"
+    launcher_command: "/usr/bin/vidyarthi (thin shell wrapper into /usr/share/shikshan/vidyarthi/src/main.py)"
+    catalog_source: "for the skeleton, read modules/catalogs/official.catalog.yml from the build-time location; runtime path is /usr/share/shikshan/catalogs/official.catalog.yml"
+    locked_decision: "Skeleton ships a single AdwApplicationWindow with: (1) a header bar showing 'Vidyarthi', (2) a list view of module titles from the official catalog (read-only, no detail pane yet), (3) a placeholder welcome page when no module is selected. No engine subprocess is spawned; clicking a module shows 'Engine not yet available' for v1.0 milestone."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/build/test_vidyarthi_skeleton.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/meson.build"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/main.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/window.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/data/ui/window.blp"
+
+S:
+  - "config/includes.chroot/usr/share/shikshan/vidyarthi/meson.build declares project('vidyarthi', version: '0.1.0'), python.find_installation('python3'), and a custom_target compiling window.blp to window.ui via blueprint-compiler"
+  - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/main.py is valid Python 3, imports gi.repository (Gtk 4.0, Adw 1, GtkSource 5), creates an Adw.Application with application_id='in.shikshan.Vidyarthi', and runs the application loop"
+  - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/window.py defines a VidyarthiWindow(Adw.ApplicationWindow) class that loads the .ui resource and populates the module list from /usr/share/shikshan/catalogs/official.catalog.yml (with a graceful fallback if the catalog file is missing — show 'No modules installed')"
+  - "config/includes.chroot/usr/share/shikshan/vidyarthi/data/ui/window.blp is a Blueprint file declaring an Adw.ApplicationWindow with a HeaderBar (title 'Vidyarthi') and a Gtk.ListView in a ScrolledWindow"
+  - "config/package-lists/vidyarthi.list.chroot lists exactly: python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-gtksourceview-5, libadwaita-1-0, blueprint-compiler, meson"
+  - "tests/build/test_vidyarthi_skeleton.sh is `#!/usr/bin/env bash`, set -euo pipefail, shellcheck-clean, mode 0755, asserts: (1) meson.build exists and project('vidyarthi' appears, (2) main.py compiles with `python3 -c 'compile(open(\"...\").read(), \"main.py\", \"exec\")'`, (3) window.py compiles likewise, (4) window.blp exists and contains 'Adw.ApplicationWindow' and 'HeaderBar', (5) vidyarthi.list.chroot contains all six required package names, (6) no engine wiring is present (grep for 'subprocess' returns 0 hits in src/ for this skeleton)"
+  - "All Python files include `# SPDX-License-Identifier: <repo license>` at the top"
+  - "All Python files use 4-space indentation, no tabs, pass `python3 -m py_compile`"
+  - "No engine subprocess wiring is introduced — this is catalog-browse only per inputs.locked_decision"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 50
+  max_files_changed: 6
+  max_diff_lines: 280
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0501 (ADR-0012 frontend stack) is on main"
+  - "SMO-0500 (ADR-0011) is on main — even though no engine wiring lands here, the contracts will line up"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

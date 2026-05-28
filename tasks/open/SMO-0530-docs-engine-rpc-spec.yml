@@ -1,0 +1,100 @@
+---
+# tasks/open/SMO-0530-docs-engine-rpc-spec.yml
+#
+# Write the architecture document for the Vidyarthi engine JSON-RPC protocol.
+# Sister document to ADR-0011 (which records the decision); this document
+# specifies the wire format engineers will implement against.
+
+id: SMO-0530
+title: "Document Vidyarthi engine JSON-RPC protocol spec"
+type: docs
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/architecture/vidyarthi-engine-rpc.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0012-frontend-stack.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+  inputs:
+    methods:
+      init:
+        params: "{engine_id: string, protocol_version: string}"
+        result: "{capabilities: object, engine_version: string}"
+        notes: "Must be the first request. Capabilities advertise grading modes, streaming support, etc."
+      load_exercise:
+        params: "{exercise_id: string, exercise_spec: object, fixtures: array<string>}"
+        result: "{ack: true}"
+        notes: "Fixtures are absolute paths inside the bundle bind-mount (sandbox-relative)."
+      run:
+        params: "{submission: object}"
+        result: "{output: object, stderr: string, exit_status: integer}"
+        notes: "Non-grading dry run. Optional; engines that don't support it return method-not-found."
+      grade:
+        params: "{submission: object}"
+        result: "{score: number (0-1), success: boolean, feedback: object en+hi, partial_credit: array<object>}"
+        notes: "Grades the submission. Result is the source of truth for the xAPI statement."
+      shutdown:
+        params: "{}"
+        result: "{ack: true}"
+        notes: "Engine flushes and exits within 2 seconds. Frontend waits up to 5s before SIGTERM."
+    error_codes:
+      "-32700": "Parse error (JSON-RPC standard)"
+      "-32600": "Invalid request (JSON-RPC standard)"
+      "-32601": "Method not found (JSON-RPC standard)"
+      "-32602": "Invalid params (JSON-RPC standard)"
+      "-32603": "Internal error (JSON-RPC standard)"
+      "-32000": "Sandbox violation (engine attempted disallowed syscall)"
+      "-32001": "Exercise spec rejected (validation failure at engine side)"
+      "-32002": "Fixture missing or unreadable"
+      "-32003": "Grading timeout"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/architecture/vidyarthi-engine-rpc.md"
+
+S:
+  - "docs/architecture/vidyarthi-engine-rpc.md exists and is Markdown"
+  - "Document opens with a one-paragraph abstract pointing at ADR-0011 as the decision record"
+  - "Document includes a 'Lifecycle' section: spawn -> init -> load_exercise -> (run | grade)* -> shutdown -> exit; with a sequence diagram in ASCII or Mermaid"
+  - "Document includes a 'Wire format' section that specifies: JSON-RPC 2.0, newline-delimited (one object per line), UTF-8, no Content-Length headers, stdout for responses+notifications, stdin for requests, stderr for free-form diagnostics"
+  - "Document includes a 'Methods' section with one subsection per method in inputs.methods, each documenting params, result, and notes verbatim from the inputs block"
+  - "Document includes an 'Error codes' table mapping each code in inputs.error_codes to its meaning; codes -32700..-32603 are documented as JSON-RPC standard, codes -32000..-32003 are documented as Vidyarthi extensions"
+  - "Document includes a 'Sandbox interaction' section that cross-references ADR-0015 and notes that fixtures are bind-mounted into the bwrap container as read-only, and that the working tmpfs is writable"
+  - "Document includes a 'Versioning' section: protocol_version is a string of the form 'MAJOR.MINOR'; frontend refuses to talk to an engine with a different MAJOR"
+  - "Document includes a 'Testing' section that names tests/engines/test_sql_engine.py (SMO-0560) as the reference implementation conformance test"
+  - "Document includes a 'Non-goals' section listing what the protocol does NOT do: no streaming progress in v1, no bidirectional notifications from engine to frontend, no resumable grading"
+  - "Document is yamllint-irrelevant and markdownlint-clean (no warnings on standard ruleset)"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 40
+  max_files_changed: 1
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

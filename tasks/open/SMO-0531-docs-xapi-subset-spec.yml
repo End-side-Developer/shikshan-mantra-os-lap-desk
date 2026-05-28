@@ -1,0 +1,106 @@
+---
+# tasks/open/SMO-0531-docs-xapi-subset-spec.yml
+#
+# Architecture document specifying the xAPI 1.0.3 subset that Vidyarthi
+# records. Sister to ADR-0014 (decision); this is the engineer-facing spec.
+
+id: SMO-0531
+title: "Document xAPI statement subset used by Vidyarthi"
+type: docs
+linked_adr: "docs/adr/0014-xapi-telemetry.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/architecture/vidyarthi-xapi-subset.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0014-xapi-telemetry.md"
+    - "docs/adr/0002-audit-log-storage.md"
+  inputs:
+    actor_shape: |
+      {
+        "objectType": "Agent",
+        "account": {
+          "homePage": "shikshan://learner",
+          "name": "<anonymous-learner-uuid-v4>"
+        }
+      }
+    verbs_in_scope:
+      "http://adlnet.gov/expapi/verbs/attempted": "Learner started an exercise"
+      "http://adlnet.gov/expapi/verbs/completed": "Learner finished an exercise"
+      "http://adlnet.gov/expapi/verbs/scored": "Engine produced a graded score"
+      "http://adlnet.gov/expapi/verbs/passed": "Score >= rubric pass threshold"
+      "http://adlnet.gov/expapi/verbs/failed": "Score < rubric pass threshold"
+    object_shape: |
+      {
+        "objectType": "Activity",
+        "id": "vidyarthi://<module-id>/<exercise-id>",
+        "definition": {
+          "name": {"en": "...", "hi": "..."},
+          "type": "http://adlnet.gov/expapi/activities/cmi.interaction"
+        }
+      }
+    result_shape: |
+      {
+        "score": {"scaled": <0..1>, "raw": <int>, "min": 0, "max": <int>},
+        "success": <bool>,
+        "completion": <bool>,
+        "response": "<learner submission, possibly truncated>",
+        "duration": "PT<N>S"
+      }
+    storage:
+      path: "~/.local/share/shikshan/learner.db"
+      sqlite_table: "statements"
+      columns: "id (text PK), actor_uuid (text), verb_id (text), object_id (text), stored_at (text iso8601), statement_json (text)"
+    audit_handshake:
+      action: "learner-export"
+      payload: "{sha256: <export-file-sha256>, count: <statement-count>, exported_at: <iso8601>}"
+      script: "scripts/audit/append-entry.py"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/architecture/vidyarthi-xapi-subset.md"
+
+S:
+  - "docs/architecture/vidyarthi-xapi-subset.md exists and is Markdown"
+  - "Document opens with a one-paragraph abstract pointing at ADR-0014 as the decision record"
+  - "Document includes an 'Actor' section reproducing inputs.actor_shape verbatim and explaining the anonymous UUID generation (UUIDv4 generated on first launch, persisted in ~/.local/share/shikshan/learner-id.txt with mode 0600)"
+  - "Document includes a 'Verbs' section as a table with id and human-readable description for each entry in inputs.verbs_in_scope; explicitly states that no other verbs are emitted in v1"
+  - "Document includes an 'Object' section reproducing inputs.object_shape verbatim and documenting that id MUST be a vidyarthi:// URI"
+  - "Document includes a 'Result' section reproducing inputs.result_shape verbatim; documents that score.scaled is the canonical score and that score.raw + score.max are optional integers"
+  - "Document includes a 'Storage' section: SQLite path, table name, column definitions exactly matching inputs.storage; notes that JSON column is the full statement and indexed columns are denormalized for query speed"
+  - "Document includes an 'Audit handshake' section that documents the export flow: when the user exports learner.db, scripts/audit/append-entry.py is invoked with action=learner-export and a payload matching inputs.audit_handshake.payload"
+  - "Document includes a 'Privacy' section stating: actor UUID is NOT derived from OS user identity; no PII is in the statement; remote LRS upload is opt-in and out of v1 scope"
+  - "Document includes an example: one full statement JSON object for the verb 'scored', valid against xAPI 1.0.3"
+  - "Document is markdownlint-clean and yamllint-irrelevant"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0503 (ADR-0014) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

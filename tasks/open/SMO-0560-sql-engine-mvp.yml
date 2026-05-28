@@ -1,0 +1,98 @@
+---
+# tasks/open/SMO-0560-sql-engine-mvp.yml
+#
+# SQL engine MVP: sqlite-wasm + GtkSourceView editor + JSON-RPC bridge +
+# three fixture exercises.
+#
+# SPLIT WARNING: This task's file count (9) hits the planner ceiling but
+# diff is bounded to 280. If during claim the implementing agent finds the
+# diff overruns 280, STOP and split into:
+#   SMO-0560a: editor + JSON-RPC bridge + sql-basics manifest (engine skeleton)
+#   SMO-0560b: three exercises + fixtures + grading conformance test
+# The split decision MUST be queued before claiming if the planner judges
+# the work won't fit.
+
+id: SMO-0560
+title: "SQL engine MVP: sqlite-wasm + GtkSourceView editor + JSON-RPC + 3 fixture exercises"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/main.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/sqlite-wasm.js"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/index.html"
+    - "modules/core/sql-basics/manifest.yml"
+    - "modules/core/sql-basics/content/exercises/01-select.yml"
+    - "modules/core/sql-basics/content/exercises/02-where.yml"
+    - "modules/core/sql-basics/content/exercises/03-join.yml"
+    - "modules/core/sql-basics/content/fixtures/employees.sql"
+    - "tests/engines/test_sql_engine.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0012-frontend-stack.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+    - "docs/architecture/vidyarthi-engine-rpc.md"
+  inputs:
+    engine_id: "sql"
+    runtime: "Python 3 subprocess speaking JSON-RPC 2.0 over stdio per ADR-0011. SQL execution is via Python's stdlib sqlite3 module (NOT sqlite-wasm at runtime — the sqlite-wasm.js + index.html files are reserved for a future browser-embedded path but are scaffolded now so the directory shape stabilizes)."
+    fixture_db: "modules/core/sql-basics/content/fixtures/employees.sql — creates a small employees(id, name, department_id, salary) and departments(id, name) schema with ~10 rows"
+    exercises:
+      "01-select": "Prompt: 'Return all rows from employees.' Expected: SELECT * FROM employees;"
+      "02-where": "Prompt: 'Return employees in the Engineering department.' Expected: SELECT * FROM employees JOIN departments ON employees.department_id = departments.id WHERE departments.name = 'Engineering';"
+      "03-join": "Prompt: 'Return each department name with the count of its employees.' Expected: a 2-column result of (name, count) grouped by department."
+    locked_decision: "Engine subprocess loads fixture SQL via `executescript`, then on each grade RPC: opens a fresh in-memory DB, replays fixture, runs the learner's query, compares the result set to expected per ADR-0011 grade contract. The sqlite-wasm.js and index.html files are reserved scaffolding — they ship empty stubs with a TODO comment and are not loaded by the engine in this MVP."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/engines/test_sql_engine.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/main.py"
+    - "modules/core/sql-basics/manifest.yml"
+
+S:
+  - "engines/sql/main.py is valid Python 3, has `if __name__ == '__main__':` entry, reads JSON-RPC requests line by line from stdin, writes responses to stdout"
+  - "engines/sql/main.py implements init, load_exercise, grade, shutdown methods per docs/architecture/vidyarthi-engine-rpc.md; returns -32601 (method not found) for `run`"
+  - "engines/sql/main.py grade(): opens fresh in-memory sqlite3 connection, executescript(fixture), runs learner's submission.sql, compares result rows to expected.result_set with compare mode from the exercise spec, returns {score: 0 or 1, success: bool, feedback: {en, hi}} — partial credit deferred"
+  - "engines/sql/sqlite-wasm.js and index.html are stubs with `// TODO: future browser-embedded path` and an HTML5 boilerplate; NOT loaded at runtime"
+  - "modules/core/sql-basics/manifest.yml validates against modules/catalogs/schemas/module.schema.json (SMO-0510), has content_type=interactive-runner, sub_engine=sql, title and description with en+hi parity"
+  - "modules/core/sql-basics/content/exercises/{01-select,02-where,03-join}.yml each validate against modules/catalogs/schemas/exercises/sql.schema.json (SMO-0511) and match the prompts in inputs.exercises"
+  - "modules/core/sql-basics/content/fixtures/employees.sql creates the schema and inserts at least 10 rows; runs cleanly under `sqlite3 :memory:` via executescript"
+  - "tests/engines/test_sql_engine.py is pytest-compatible, spawns engines/sql/main.py as a subprocess, drives it through the JSON-RPC lifecycle (init -> load_exercise -> grade -> shutdown), and asserts: (1) a correct submission for 01-select grades score=1 success=true, (2) an incorrect submission grades score=0 success=false, (3) load_exercise with a missing fixture returns error -32002, (4) shutdown causes the process to exit within 5 seconds, (5) the engine returns -32601 for `run`"
+  - "Tests pass with `python -m pytest tests/engines/test_sql_engine.py`"
+  - "Splitting decision: if the implementing agent finds the diff exceeds 280 lines OR file count exceeds the budget, STOP and file SMO-0560a + SMO-0560b instead per the header comment"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 50
+  max_files_changed: 9
+  max_diff_lines: 280
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0510 (module schema content types) is on main"
+  - "SMO-0511 (sql exercise schema) is on main"
+  - "SMO-0530 (engine RPC spec doc) is on main"
+  - "SMO-0550 (meson skeleton) is on main — directory layout established"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

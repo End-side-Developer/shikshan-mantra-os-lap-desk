@@ -1,0 +1,78 @@
+---
+# tasks/open/SMO-0503-adr-xapi-telemetry.yml
+#
+# Locks the telemetry format for Vidyarthi learner activity. xAPI statements
+# subset, stored locally first (learner.db under ~/.local/share/shikshan/),
+# hashed into the audit chain when learner consents to export.
+
+id: SMO-0503
+title: "Write ADR-0014 telemetry format: xAPI statements"
+type: adr
+linked_adr: "docs/adr/0014-xapi-telemetry.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0014-xapi-telemetry.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0002-audit-log-storage.md"
+    - "docs/adr/0011-engine-ipc.md"
+  inputs:
+    adr_number: "0014"
+    slug: "xapi-telemetry"
+    locked_decision: "Vidyarthi records learner activity as xAPI 1.0.3 statements stored in a per-user SQLite database at ~/.local/share/shikshan/learner.db. The schema follows the xAPI Statement object (actor, verb, object, result, context, timestamp). Actor is an anonymous learner UUID generated on first launch (not tied to OS user identity). Verbs in scope for v1: attempted, completed, scored, passed, failed. Statements are local-only by default; export to a remote LRS is opt-in and out of scope for v1. When the user exports, the export file's SHA-256 is appended to docs/audit/audit.db so the chain proves no silent edits to the learner's history."
+    rejected_alternatives:
+      - "SCORM 1.2 / 2004: monolithic content-package model, bad fit for our manifest+exercise structure; runtime API is browser-centric"
+      - "H5P-as-bundle: H5P is an authoring/runtime bundle format, not a telemetry format; it ties our schema to the H5P content type catalog"
+      - "Custom JSON schema: loses interop with existing LRS tooling and analytics; reinvents the wheel"
+      - "cmi5: an xAPI profile, valid choice but overspecified for v1; we may adopt it later as a profile layered on the same data"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0014-xapi-telemetry.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.0.0) — frontmatter status=proposed, today's date, decision-makers field equals [\"@shikshan/platform\"]"
+  - "Context section explains why a telemetry format must be locked now (engine grade() result has to land somewhere)"
+  - "Considered Options section enumerates at least 3 alternatives from inputs.rejected_alternatives"
+  - "Decision Outcome documents the xAPI 1.0.3 subset: actor (Agent with anonymous account.name = UUID), verb (id from ADL Verbs vocab), object (Activity with id = module-uri + exercise-id), result (score.scaled, success, response), timestamp (ISO-8601 UTC)"
+  - "Decision Outcome documents storage: ~/.local/share/shikshan/learner.db (SQLite), one row per statement, JSON column for the raw statement plus indexed columns for actor, verb_id, object_id, timestamp"
+  - "Decision Outcome documents the audit-chain handshake: when a user exports their learner.db, the export file's SHA-256 is appended to docs/audit/audit.db via scripts/audit/append-entry.py with action=\"learner-export\""
+  - "Consequences section has at least 4 bullets covering: anonymity by default, opt-in remote LRS export, audit-chain integrity for exports, schema interop with downstream analytics"
+  - "Confirmation section names tests/engines/test_sql_engine.py (asserts a statement is written after grading) and SMO-0531 (the spec doc) as the validators"
+  - "Rollback plan paragraph describes how to revert (supersede ADR-0014; learner.db migration would require dump + reimport into the new schema)"
+  - "ADR cross-references SMO-0531 (xAPI subset spec doc), SMO-0590 (e2e asserts statement on disk)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "docs/adr/0000-template.md exists on main"
+  - "docs/adr/0002-audit-log-storage.md is on main (the chain we'll handshake with)"
+  - "ADR number 0014 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

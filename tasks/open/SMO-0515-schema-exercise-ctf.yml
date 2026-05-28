@@ -1,0 +1,88 @@
+---
+# tasks/open/SMO-0515-schema-exercise-ctf.yml
+#
+# Skeleton schema for capture-the-flag style security exercises. Policy-gated
+# under safety_mode strict — see SMO-0520. Engine ships post-v1.
+
+id: SMO-0515
+title: "Add exercises/ctf.schema.json (skeleton, policy-gated under safety_mode strict)"
+type: build-config
+linked_adr: "docs/adr/0015-sandbox-primitive.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/exercises/ctf.schema.json"
+    - "tests/manifests/test_ctf_exercise_schema.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+  inputs:
+    schema_id: "ctf"
+    locked_fields:
+      id: "string, required"
+      title: "object en+hi, required"
+      prompt: "object en+hi, required"
+      category: "string enum [crypto, web-sec, forensics, reverse, pwn, misc], required"
+      difficulty: "string enum [easy, medium, hard], required"
+      flag_format: "string regex pattern (e.g., 'SHIKSHAN\\{[A-Za-z0-9_]+\\}'), required"
+      flag_hash: "string (SHA-256 hex of the canonical flag), required — the flag itself MUST NOT appear in the manifest"
+      challenge_files: "array of strings (repo-relative paths under module's content/challenge/) of artifacts handed to the learner"
+      hints: "array of objects with after_attempt (int) and text (en+hi) and cost (int point penalty)"
+      writeup_visibility: "string enum [hidden, post-completion, always], default post-completion"
+      safety_requirements:
+        - "requires_safety_mode (string enum [strict, moderate, open], default strict)"
+        - "network_allowed (boolean, default false)"
+      rubric: "object mapping criterion to {weight, description en+hi}"
+    locked_decision: "CTF exercises are policy-gated. The schema requires safety_requirements.requires_safety_mode and the policy layer (SMO-0520) refuses to load any CTF module under safety_mode=strict by default. The literal flag NEVER appears in the manifest — only its SHA-256 hash. The grading engine compares hash(learner_input) to flag_hash. Engine arrives post-v1; this task ships the schema only."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/manifests/test_ctf_exercise_schema.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/exercises/ctf.schema.json"
+
+S:
+  - "modules/catalogs/schemas/exercises/ctf.schema.json declares $schema = https://json-schema.org/draft/2020-12/schema and $id = https://shikshan-mantra-os/schemas/exercises/ctf.schema.json"
+  - "ctf.schema.json sets additionalProperties: false at root and on every nested object"
+  - "ctf.schema.json required keys at root: id, title, prompt, category, difficulty, flag_format, flag_hash, safety_requirements"
+  - "ctf.schema.json flag_hash pattern is `^[a-f0-9]{64}$` (SHA-256 hex)"
+  - "ctf.schema.json category enum is exactly [crypto, web-sec, forensics, reverse, pwn, misc]"
+  - "ctf.schema.json difficulty enum is exactly [easy, medium, hard]"
+  - "ctf.schema.json safety_requirements.requires_safety_mode enum is exactly [strict, moderate, open] with default strict — the policy layer enforces what this means"
+  - "ctf.schema.json title, prompt, hints[*].text, rubric[*].description objects require both en and hi keys (en/hi parity guard)"
+  - "Schema $comment field at root states explicitly: 'CTF modules are policy-gated. The literal flag MUST NOT appear in the manifest; only flag_hash is recorded. See SMO-0520 (policy gates) and ADR-0015 (sandbox).'"
+  - "tests/manifests/test_ctf_exercise_schema.py is pytest-compatible and contains: (1) a round-trip test on a minimal valid fixture, (2) a mutation test that drops 'flag_hash' and asserts failure, (3) a mutation test with flag_hash not matching the SHA-256 pattern and asserts failure, (4) a mutation test that uses an unknown category and asserts failure, (5) a mutation test that drops 'hi' from prompt and asserts failure, (6) a mutation test that adds an unknown root key and asserts failure"
+  - "Tests pass with `python -m pytest tests/manifests/test_ctf_exercise_schema.py`"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 2
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0504 (ADR-0015) is on main"
+  - "SMO-0510 (module.schema.json) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

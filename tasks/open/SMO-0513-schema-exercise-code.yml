@@ -1,0 +1,85 @@
+---
+# tasks/open/SMO-0513-schema-exercise-code.yml
+#
+# Skeleton schema for the code engine. The engine itself arrives post-v1;
+# this schema reserves the field shape so authors can begin drafting.
+
+id: SMO-0513
+title: "Add exercises/code.schema.json (skeleton — engine arrives later)"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/exercises/code.schema.json"
+    - "tests/manifests/test_code_exercise_schema.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+  inputs:
+    schema_id: "code"
+    locked_fields:
+      id: "string, required"
+      title: "object en+hi, required"
+      prompt: "object en+hi, required"
+      language: "string enum [python], required — v1 reserves python only; engine itself ships post-v1"
+      starter_code: "string, optional"
+      reference_solution: "string, optional, not shown to learner"
+      test_harness:
+        kind: "string enum [pytest, unittest, doctest], default pytest"
+        files: "array of strings (repo-relative paths under module's content/)"
+      time_limit_seconds: "integer, minimum 1, maximum 30, default 5"
+      memory_limit_mb: "integer, minimum 16, maximum 256, default 128"
+      hints: "array of objects with after_attempt (int) and text (en+hi)"
+    locked_decision: "Language enum is restricted to [python] for v1 even though no engine ships — this keeps authoring forward-compatible. Time/memory limits ride the sandbox primitive from ADR-0015. The engine arrives in a later phase; this task ONLY ships the schema + tests."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/manifests/test_code_exercise_schema.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/exercises/code.schema.json"
+
+S:
+  - "modules/catalogs/schemas/exercises/code.schema.json declares $schema = https://json-schema.org/draft/2020-12/schema and $id = https://shikshan-mantra-os/schemas/exercises/code.schema.json"
+  - "code.schema.json sets additionalProperties: false at root and on every nested object"
+  - "code.schema.json required keys at root: id, title, prompt, language"
+  - "code.schema.json language enum is exactly [python] — single element, but expressed as an enum so future expansion is a one-line additive change"
+  - "code.schema.json test_harness.kind enum is exactly [pytest, unittest, doctest]"
+  - "code.schema.json time_limit_seconds bounds are [1, 30] inclusive; memory_limit_mb bounds are [16, 256]; defaults match inputs.locked_fields"
+  - "code.schema.json title, prompt, and hints[*].text objects require both en and hi keys (en/hi parity guard)"
+  - "tests/manifests/test_code_exercise_schema.py is pytest-compatible and contains: (1) a round-trip test on a minimal valid fixture, (2) a mutation test that sets language to a non-enum value and asserts failure, (3) a mutation test that drops 'language' and asserts failure, (4) a mutation test that sets time_limit_seconds=31 and asserts failure, (5) a mutation test that drops 'hi' from prompt and asserts failure, (6) a mutation test that adds an unknown root key and asserts failure"
+  - "Tests pass with `python -m pytest tests/manifests/test_code_exercise_schema.py`"
+  - "Schema $comment field at root notes that the runtime engine is not part of v1 and references ADR-0015 for the sandbox profile that will host it"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 2
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0504 (ADR-0015 sandbox) is on main — schema cross-references it"
+  - "SMO-0510 (module.schema.json) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

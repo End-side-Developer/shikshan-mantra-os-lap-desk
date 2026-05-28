@@ -1,0 +1,84 @@
+---
+# tasks/open/SMO-0514-schema-exercise-web.yml
+#
+# Skeleton schema for the web engine (HTML/CSS/JS practice). Engine
+# arrives post-v1; this task only ships the schema + tests.
+
+id: SMO-0514
+title: "Add exercises/web.schema.json (skeleton)"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/exercises/web.schema.json"
+    - "tests/manifests/test_web_exercise_schema.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+  inputs:
+    schema_id: "web"
+    locked_fields:
+      id: "string, required"
+      title: "object en+hi, required"
+      prompt: "object en+hi, required"
+      starter_html: "string, optional (HTML5 document or fragment)"
+      starter_css: "string, optional"
+      starter_js: "string, optional"
+      assertions:
+        - "array of objects with type (enum) and selector/expected/regex per type"
+        - "type enum: [dom-diff, selector-exists, computed-style, text-equals, attribute-equals]"
+      reference_html: "string, optional — canonical result used for dom-diff"
+      hints: "array of objects with after_attempt (int) and text (en+hi)"
+      rubric: "object mapping criterion to {weight, description en+hi}"
+    locked_decision: "Web exercises are graded via DOM-diff against reference_html (when set) plus per-selector assertions. The engine (when it ships) renders learner output in a WebKitGTK view inside the bubblewrap sandbox. v1 ships ONLY the schema; the engine is a later track."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/manifests/test_web_exercise_schema.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/exercises/web.schema.json"
+
+S:
+  - "modules/catalogs/schemas/exercises/web.schema.json declares $schema = https://json-schema.org/draft/2020-12/schema and $id = https://shikshan-mantra-os/schemas/exercises/web.schema.json"
+  - "web.schema.json sets additionalProperties: false at root and on every nested object"
+  - "web.schema.json required keys at root: id, title, prompt"
+  - "web.schema.json title, prompt, hints[*].text, rubric[*].description objects require both en and hi keys (en/hi parity guard)"
+  - "web.schema.json assertions[*].type is an enum exactly [dom-diff, selector-exists, computed-style, text-equals, attribute-equals]"
+  - "web.schema.json assertion shape varies by type — use oneOf or if/then so dom-diff requires reference_html, selector-exists requires selector, computed-style requires selector+property+expected, text-equals requires selector+expected, attribute-equals requires selector+attribute+expected"
+  - "tests/manifests/test_web_exercise_schema.py is pytest-compatible and contains: (1) a round-trip test on a fixture with starter_html + one selector-exists assertion, (2) a round-trip test on a fixture with dom-diff + reference_html, (3) a mutation test that uses dom-diff without reference_html and asserts failure, (4) a mutation test that drops 'hi' from title and asserts failure, (5) a mutation test that uses an unknown assertion type and asserts failure, (6) a mutation test that adds an unknown root key and asserts failure"
+  - "Tests pass with `python -m pytest tests/manifests/test_web_exercise_schema.py`"
+  - "Schema $comment field at root notes that the runtime engine is not part of v1 and references ADR-0015"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 40
+  max_files_changed: 2
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0504 (ADR-0015) is on main"
+  - "SMO-0510 (module.schema.json) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

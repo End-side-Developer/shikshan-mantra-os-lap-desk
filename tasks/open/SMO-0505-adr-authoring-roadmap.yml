@@ -1,0 +1,76 @@
+---
+# tasks/open/SMO-0505-adr-authoring-roadmap.yml
+#
+# Placeholder ADR for the future authoring track. Documents that v1 ships
+# only `vidyarthi-modulectl validate` for content authors, and that a
+# full GUI authoring app (Flutter Desktop) is deferred.
+
+id: SMO-0505
+title: "Write ADR-0016 authoring track placeholder (Flutter Desktop deferred)"
+type: adr
+linked_adr: "docs/adr/0016-authoring-roadmap.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0016-authoring-roadmap.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0012-frontend-stack.md"
+  inputs:
+    adr_number: "0016"
+    slug: "authoring-roadmap"
+    locked_decision: "Vidyarthi v1 ships ONLY a command-line authoring surface: `vidyarthi-modulectl validate <module-dir>` for schema-conformance checking. A full GUI authoring application is deferred to a post-v1 track and will be Flutter Desktop (Linux desktop embedder). Rationale: authoring is write-mostly, content-rich, and shares no code with the learner runtime; using a different stack here is acceptable and lets the team prototype quickly. The author publication flow will use a separate signing-and-bundling backend service (out of scope for v1). v1 module authors hand-write YAML + content files and run modulectl validate locally."
+    rejected_alternatives:
+      - "Ship a PyGObject authoring app in v1: doubles UI surface area before any learner has used the runtime; premature"
+      - "Ship a web authoring app in v1: requires a hosted backend or local web server; conflicts with offline-first goal"
+      - "No authoring track at all: blocks third-party content; modulectl validate is the minimum viable surface"
+      - "Use the same PyGObject stack for the future authoring app: locked-in tech debt if the prototype shows Flutter wins; this ADR keeps the door open"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0016-authoring-roadmap.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.0.0) — frontmatter status=proposed, today's date, decision-makers field equals [\"@shikshan/platform\"]"
+  - "Context section explains why a placeholder is needed now (clarifies for contributors that there is no GUI authoring track in v1, prevents premature work)"
+  - "Considered Options section enumerates at least 3 alternatives from inputs.rejected_alternatives"
+  - "Decision Outcome names `vidyarthi-modulectl validate` (SMO-0580) as the only v1 authoring surface"
+  - "Decision Outcome sketches the future authoring app at one-paragraph depth: Flutter Desktop, separate repo or top-level dir TBD, publishes to a signing service that produces signed module bundles for the official catalog"
+  - "Consequences section has at least 4 bullets covering: v1 author UX is CLI-only (acceptable for early adopters), publication signing is deferred, two UI stacks in the long run is an explicit cost, no v1 commitment to Flutter is made"
+  - "Confirmation section names: SMO-0580 acceptance tests cover the validate subcommand and are sufficient validation for v1's authoring surface"
+  - "Rollback plan paragraph describes how to revert (supersede ADR-0016 with a different authoring strategy)"
+  - "ADR cross-references SMO-0580 (modulectl CLI), SMO-0501 (frontend stack — explicitly different from authoring)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0501 (ADR-0012 frontend stack) is on main — this ADR explicitly contrasts with it"
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0016 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

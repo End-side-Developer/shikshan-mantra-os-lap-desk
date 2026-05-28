@@ -1,0 +1,102 @@
+---
+# tasks/open/SMO-0570-sql-engine-sandbox.yml
+#
+# Bubblewrap profile + seccomp allow-list for the SQL engine, plus an
+# escape test that asserts file-write/net/fork attempts all fail.
+
+id: SMO-0570
+title: "Bubblewrap profile + seccomp allow-list for SQL engine"
+type: build-config
+linked_adr: "docs/adr/0015-sandbox-primitive.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/sandbox.bwrap"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/seccomp.json"
+    - "tests/engines/test_sql_sandbox_escape.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+    - "docs/architecture/vidyarthi-engine-rpc.md"
+  inputs:
+    bwrap_arg_set:
+      - "--unshare-all"
+      - "--die-with-parent"
+      - "--ro-bind /usr/share/shikshan/vidyarthi/engines/sql /engine"
+      - "--ro-bind /usr/lib/python3 /usr/lib/python3"
+      - "--ro-bind /usr/bin/python3 /usr/bin/python3"
+      - "--tmpfs /tmp"
+      - "--tmpfs /run"
+      - "--proc /proc"
+      - "--dev /dev"
+      - "--ro-bind <bundle>/content /bundle"   # <bundle> substituted at launch
+      - "--chdir /tmp"
+      - "--setenv PYTHONDONTWRITEBYTECODE 1"
+      - "--seccomp 10"                          # fd of seccomp.json compiled to BPF
+    seccomp_allow:
+      - "read, write, close, fstat, lseek, mmap, mprotect, munmap, brk, rt_sigaction, rt_sigprocmask, exit, exit_group"
+      - "openat (with arg-filter: O_RDONLY only for paths under /engine, /bundle, /usr/lib/python3)"
+      - "futex, getpid, gettid, sched_yield, nanosleep, clock_gettime, clock_nanosleep"
+      - "newfstatat, statx, getdents64, getrandom, getuid, geteuid, getgid, getegid"
+      - "set_tid_address, set_robust_list, rseq, prlimit64, sysinfo, uname"
+    seccomp_deny_explicit:
+      - "fork, vfork, clone (except clone with limited flags for thread creation, which is denied entirely in v1)"
+      - "socket, connect, bind, listen, accept, sendto, recvfrom, sendmsg, recvmsg"
+      - "execve, execveat"
+      - "ptrace, process_vm_readv, process_vm_writev"
+      - "unlink, unlinkat, rename, renameat, renameat2, chmod, fchmod, chown, fchown"
+    locked_decision: "SQL engine is a pure read+compute pipeline. It needs Python's stdlib sqlite3 (which only requires file read on the engine bundle + the in-memory DB), and stdin/stdout for JSON-RPC. No fork, no network, no filesystem write outside tmpfs."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/engines/test_sql_sandbox_escape.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/sandbox.bwrap"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/seccomp.json"
+
+S:
+  - "sandbox.bwrap is a newline-separated argument file (one arg per line, comments allowed with leading #) reproducing inputs.bwrap_arg_set exactly"
+  - "seccomp.json is a libseccomp-compatible JSON policy with defaultAction = SCMP_ACT_ERRNO (errno EPERM) and an explicit allow-list matching inputs.seccomp_allow"
+  - "seccomp.json includes argument filters where listed in inputs.seccomp_allow (e.g., openat restricted to O_RDONLY)"
+  - "seccomp.json does NOT include any of the syscalls in inputs.seccomp_deny_explicit"
+  - "tests/engines/test_sql_sandbox_escape.sh is `#!/usr/bin/env bash`, set -euo pipefail, shellcheck-clean, mode 0755"
+  - "test_sql_sandbox_escape.sh skips gracefully (exit 77, the autoconf skip code) when bwrap is not installed; otherwise asserts:"
+  - "  (a) launching engines/sql/main.py under sandbox.bwrap runs the engine normally (init -> shutdown round-trip succeeds)"
+  - "  (b) a probe program attempting `open('/tmp/escape', 'w')` under the same sandbox fails with EPERM or EACCES (filesystem write blocked)"
+  - "  (c) a probe program attempting socket(AF_INET, SOCK_STREAM, 0) under the same sandbox returns -1 and errno=EPERM (network blocked by seccomp)"
+  - "  (d) a probe program attempting os.fork() under the same sandbox raises OSError (fork blocked by seccomp)"
+  - "  (e) the engine's own JSON-RPC round-trip from SMO-0560 still passes when launched inside the sandbox"
+  - "Tests pass with `bash tests/engines/test_sql_sandbox_escape.sh` on a host that has bwrap + libseccomp; SKIPPED on hosts without them"
+  - "sandbox.bwrap and seccomp.json are mode 0644 (data files, not executables)"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 45
+  max_files_changed: 3
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0504 (ADR-0015 sandbox) is on main"
+  - "SMO-0560 (SQL engine MVP) is on main — the engine this sandbox wraps must exist"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

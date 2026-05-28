@@ -1,0 +1,90 @@
+---
+# tasks/open/SMO-0520-policy-content-type-gates.yml
+#
+# Add allowed_content_types and allowed_sub_engines to policy.yml, with
+# per-safety-mode defaults. Extend auth-config.schema.json so the policy
+# file itself validates against a schema.
+
+id: SMO-0520
+title: "Add allowed_content_types + allowed_sub_engines to policy.yml"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/etc/shikshan/policy.yml"
+    - "modules/catalogs/schemas/auth-config.schema.json"
+    - "tests/policy/test_policy_content_type_gates.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0012-frontend-stack.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+  inputs:
+    policy_keys_to_add:
+      allowed_content_types: "array of strings — which content_type values modulectl will load"
+      allowed_sub_engines: "array of strings — which sub_engine identifiers may be invoked"
+    safety_mode_defaults:
+      strict:
+        allowed_content_types: ["video", "document", "interactive-runner", "quiz"]
+        allowed_sub_engines: ["sql", "quiz"]
+        notes: "CTF excluded. Code and web sub-engines excluded until their runtime ships."
+      moderate:
+        allowed_content_types: ["video", "document", "interactive-runner", "quiz"]
+        allowed_sub_engines: ["sql", "quiz", "code", "web"]
+        notes: "All non-experimental engines."
+      open:
+        allowed_content_types: ["video", "document", "interactive-runner", "quiz", "experimental"]
+        allowed_sub_engines: ["sql", "quiz", "code", "web", "ctf"]
+        notes: "All engines including CTF and experimental content types."
+    locked_decision: "Policy is the single source of truth for what content modulectl will admit. CTF modules ONLY load under safety_mode=open. The schema (SMO-0515) and the policy (this task) are independent gates — both must allow."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/policy/test_policy_content_type_gates.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/etc/shikshan/policy.yml"
+    - "modules/catalogs/schemas/auth-config.schema.json"
+
+S:
+  - "config/includes.chroot/etc/shikshan/policy.yml gains two top-level keys: allowed_content_types and allowed_sub_engines (added without removing existing keys; existing structure preserved)"
+  - "policy.yml's default safety_mode (whatever the current value is) is left UNCHANGED; only the new keys are added with the strict-mode values from inputs.safety_mode_defaults.strict"
+  - "policy.yml includes commented-out blocks (YAML comments) showing the moderate and open profiles so an operator can switch by uncommenting"
+  - "modules/catalogs/schemas/auth-config.schema.json is extended to declare allowed_content_types (array of strings) and allowed_sub_engines (array of strings) as optional properties; additionalProperties remains false at the root"
+  - "tests/policy/test_policy_content_type_gates.py is pytest-compatible and contains: (1) a test that policy.yml parses as YAML, (2) a test that policy.yml validates against auth-config.schema.json, (3) a test that asserts allowed_content_types under strict does NOT contain 'experimental' and allowed_sub_engines under strict does NOT contain 'ctf', (4) a test that loads the three commented profiles by parsing the YAML comments OR by checking the file text contains the required hints (`# safety_mode: moderate` etc.), (5) a test that asserts en/hi parity comment is preserved if it was already present (no regression)"
+  - "tests/policy/test_policy_content_type_gates.py passes with `python -m pytest tests/policy/test_policy_content_type_gates.py`"
+  - "policy.yml remains shellcheck-irrelevant and yamllint-clean (line length, indentation consistent)"
+  - "Schema change documents (via $comment) that these keys are consumed by vidyarthi-modulectl install (SMO-0580)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 40
+  max_files_changed: 3
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0510 (module.schema.json content types) is on main"
+  - "SMO-0515 (CTF schema) is on main — referenced by the open profile"
+  - "config/includes.chroot/etc/shikshan/policy.yml exists on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

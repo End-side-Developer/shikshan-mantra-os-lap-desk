@@ -1,0 +1,87 @@
+---
+# tasks/open/SMO-0590-e2e-sql-mvp.yml
+#
+# End-to-end integration test for the Vidyarthi v1.0 milestone: ISO boots,
+# Vidyarthi opens, sql-basics module loads, SELECT grades, xAPI written,
+# audit chain intact.
+
+id: SMO-0590
+title: "E2E: ISO -> Vidyarthi -> sql-basics -> SELECT grades -> xAPI -> audit intact"
+type: tests
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "tests/e2e/test_vidyarthi_sql_mvp.sh"
+    - "tests/e2e/README.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0014-xapi-telemetry.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+    - "docs/architecture/vidyarthi-engine-rpc.md"
+    - "docs/architecture/vidyarthi-xapi-subset.md"
+  inputs:
+    test_stages:
+      1: "ISO build (or use pre-built artifact from releases/) — verify ISO exists and has the shikshan-vidyarthi files at expected paths"
+      2: "QEMU boot — boot the ISO with `qemu-system-x86_64 -enable-kvm -m 2048 -cdrom <iso> -nographic -serial mon:stdio` (or skip QEMU when not available and fall back to a chroot-based smoke check)"
+      3: "Vidyarthi launches — exec /usr/bin/vidyarthi inside the booted environment or chroot; verify the process starts and the AdwApplicationWindow is created (use dbus introspection or stderr log line as proxy when no display)"
+      4: "Catalog lists sql-basics — the module list view contains 'SQL Basics'"
+      5: "Engine subprocess spawns under sandbox — vidyarthi-modulectl path is on PATH; selecting sql-basics + exercise 01-select spawns engines/sql/main.py under sandbox.bwrap (verify via /proc/<pid>/status uid_map for namespace use)"
+      6: "Grade succeeds — submit 'SELECT * FROM employees;' as the learner answer; engine returns score=1 success=true"
+      7: "xAPI statement written — ~/.local/share/shikshan/learner.db has a row whose statement_json contains verb http://adlnet.gov/expapi/verbs/scored and object id matching vidyarthi://sql-basics/01-select"
+      8: "Audit chain intact — `python scripts/audit/verify-chain.py --db docs/audit/audit.db` exits 0 both before and after the test run"
+    failure_modes_to_assert:
+      - "If QEMU+KVM unavailable on the test host, the test SKIPS (exit 77) with a clear message — does not fail"
+      - "If bwrap unavailable, stages 5/6 SKIP but stages 1-4 still run"
+      - "If ISO artifact missing, the test SKIPS with instructions to run scripts/build/build-iso.sh first"
+    locked_decision: "This test is the v1.0 milestone gate. It MUST run in CI on the integration job (out of scope: making CI fast — this can take 15-30 min). Failure of any non-SKIP stage fails the build. The test exercises every initiative piece: frontend (SMO-0550), engine (SMO-0560), sandbox (SMO-0570), CLI (SMO-0580), telemetry (SMO-0503/0531), audit (SMO-0503 handshake)."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/e2e/test_vidyarthi_sql_mvp.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "tests/e2e/test_vidyarthi_sql_mvp.sh"
+    - "tests/e2e/README.md"
+
+S:
+  - "tests/e2e/test_vidyarthi_sql_mvp.sh is `#!/usr/bin/env bash`, set -euo pipefail, shellcheck-clean, mode 0755"
+  - "Test implements all 8 stages from inputs.test_stages as numbered shell functions stage_1_iso through stage_8_audit"
+  - "Test honors inputs.failure_modes_to_assert: SKIPs with exit 77 when QEMU+KVM, bwrap, or the ISO artifact is absent, with a clear stderr message naming the missing prerequisite"
+  - "Test runs in an isolated HOME (mktemp -d) so it never writes to the developer's real ~/.local/share/shikshan/"
+  - "Stage 7 asserts the xAPI row via `sqlite3 \"$HOME/.local/share/shikshan/learner.db\" 'SELECT count(*) FROM statements WHERE verb_id = \"http://adlnet.gov/expapi/verbs/scored\" AND object_id LIKE \"vidyarthi://sql-basics/01-select%\"'` returns >= 1"
+  - "Stage 8 runs `python scripts/audit/verify-chain.py --db docs/audit/audit.db` and asserts exit code 0"
+  - "tests/e2e/README.md documents: (a) what the test asserts and which tasks it spans (SMO-0500..0580), (b) host prerequisites (qemu-kvm, bwrap, sqlite3, python3 + jsonschema + pyyaml), (c) how to run locally (`bash tests/e2e/test_vidyarthi_sql_mvp.sh`), (d) expected runtime (15-30 minutes), (e) how to interpret SKIP vs FAIL, (f) link back to docs/architecture/vidyarthi-engine-rpc.md and docs/architecture/vidyarthi-xapi-subset.md"
+  - "Test produces a structured summary on stdout: one line per stage with PASS / SKIP / FAIL and a non-zero exit iff any stage FAILed"
+  - "Test passes (or SKIPs cleanly) on a host with the prerequisites installed"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 60
+  max_files_changed: 2
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500..0580 (all Vidyarthi prerequisites) are on main"
+  - "scripts/audit/verify-chain.py exists on main (it does as of 2026-05-28)"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

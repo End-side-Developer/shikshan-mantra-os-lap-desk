@@ -1,0 +1,84 @@
+---
+# tasks/open/SMO-0500-adr-engine-ipc.yml
+#
+# Vidyarthi initiative lead-in ADR: engine IPC mechanism.
+# Establishes JSON-RPC over stdio with one-subprocess-per-exercise as the
+# locked design. Required before any SMO-05xx implementation task may claim.
+
+id: SMO-0500
+title: "Write ADR-0011 engine IPC: subprocess + JSON-RPC over stdio"
+type: adr
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0011-engine-ipc.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0001-debian-live-build.md"
+    - "docs/adr/0002-audit-log-storage.md"
+  inputs:
+    adr_number: "0011"
+    slug: "engine-ipc"
+    initiative: "Vidyarthi self-learning practice engine"
+    locked_decision: "Each Vidyarthi exercise runs in its own short-lived child process. Frontend talks to the engine via JSON-RPC 2.0 framed over the child's stdin/stdout (newline-delimited). Stderr is reserved for human-readable diagnostics captured into the engine log. Subprocess lifetime = one exercise attempt; the frontend respawns for the next exercise."
+    methods_to_define:
+      - "init(engine_id, exercise_spec) -> capabilities"
+      - "load_exercise(exercise_id) -> ack | error"
+      - "run(submission) -> result"
+      - "grade(submission) -> {score, success, feedback}"
+      - "shutdown() -> ack"
+    rejected_alternatives:
+      - "D-Bus session daemon (heavyweight, RAM, brittle activation on 2 GB target, harder to sandbox per-call)"
+      - "In-process Python plugins (no isolation; a crash kills the frontend; sandbox boundary impossible)"
+      - "HTTP over loopback (port allocation, extra serialization, no natural lifetime tie)"
+      - "Unix domain socket with custom framing (more code than stdio for no isolation gain)"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0011-engine-ipc.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.0.0) — frontmatter status=proposed, today's date, decision-makers field equals [\"@shikshan/platform\"] (solo-maintainer mode per CLAUDE.md)"
+  - "Context section explains that Vidyarthi is a new initiative and names PLAN.md + the Vidyarthi memory entry as the source"
+  - "Considered Options section enumerates at least 3 alternatives (D-Bus daemon, in-process plugins, HTTP loopback) and names subprocess + JSON-RPC stdio as the decision"
+  - "Decision Outcome section reproduces the inputs.methods_to_define list and specifies JSON-RPC 2.0 framing (newline-delimited, one object per line, no Content-Length headers)"
+  - "Decision Outcome documents subprocess lifetime: one process per exercise attempt; respawn for next exercise"
+  - "Decision Outcome documents stream conventions: stdin = requests, stdout = responses + notifications, stderr = diagnostics"
+  - "Consequences section has at least 4 bullets covering: isolation/sandbox synergy (sets up ADR-0015), respawn cost vs. memory safety, debuggability via stderr capture, no shared-state engines"
+  - "Confirmation section names: tests/engines/test_sql_engine.py (SMO-0560) and tests/e2e/test_vidyarthi_sql_mvp.sh (SMO-0590)"
+  - "Rollback plan paragraph describes how to revert (supersede ADR-0011 with new ADR + restore in-process or alternative IPC; lists which subsequent ADRs 0012/0015 would also need supersession)"
+  - "ADR cross-references SMO-0510 (schema content-type wiring), SMO-0560 (SQL engine MVP), SMO-0570 (sandbox profile)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0011 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

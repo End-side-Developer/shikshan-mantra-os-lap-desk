@@ -1,0 +1,76 @@
+---
+# tasks/open/SMO-0502-adr-kolibri-relationship.yml
+#
+# Locks the relationship between Vidyarthi and Kolibri: they are sibling
+# apps that share the ContentNode vocabulary but NOT storage. Kolibri is
+# not the host runtime for Vidyarthi modules.
+
+id: SMO-0502
+title: "Write ADR-0013 Kolibri relationship: sibling app, not host"
+type: adr
+linked_adr: "docs/adr/0013-kolibri-relationship.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0013-kolibri-relationship.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0000-template.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0012-frontend-stack.md"
+  inputs:
+    adr_number: "0013"
+    slug: "kolibri-relationship"
+    locked_decision: "Kolibri and Vidyarthi are sibling top-level applications on Shikshan Mantra OS. Vidyarthi reuses Kolibri's ContentNode/Topic taxonomy vocabulary (so authors and learners share a mental model) but does NOT use Kolibri channels or the kolibri storage layer for module storage. Vidyarthi modules live under /usr/share/shikshan/modules/ (system) and ~/.local/share/shikshan/modules/ (user). The two apps may cross-link by URI (kolibri:// and vidyarthi://) but they have independent processes, independent telemetry stores, and independent updaters."
+    rejected_alternatives:
+      - "Vidyarthi as a Kolibri plugin: ties release cadence to Kolibri upstream; Kolibri's plugin model is web-first and not friendly to native subprocess engines"
+      - "Vidyarthi modules served from Kolibri channels: forces our content into Kolibri's ContentImport pipeline and signing model; we lose policy-gated content types"
+      - "Vidyarthi replacing Kolibri: Kolibri's library/curation strengths are real; replacing it would be a regression for the learner"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0013-kolibri-relationship.md"
+
+S:
+  - "ADR follows docs/adr/0000-template.md (MADR 3.0.0) — frontmatter status=proposed, today's date, decision-makers field equals [\"@shikshan/platform\"]"
+  - "Context section explains that learners will see both apps on the desktop and must know which to launch when"
+  - "Considered Options section enumerates at least 3 alternatives from inputs.rejected_alternatives"
+  - "Decision Outcome documents the shared ContentNode vocabulary subset reused (topic, exercise, video, document) and confirms storage paths are disjoint"
+  - "Decision Outcome documents the kolibri:// and vidyarthi:// URI scheme handshake (mention only — full spec deferred)"
+  - "Consequences section has at least 4 bullets covering: independent release cadence, no kolibri-runtime dependency in Vidyarthi, duplicate ContentNode walkers (acceptable cost), learner-facing launcher labelling (Kolibri = Library, Vidyarthi = Practice)"
+  - "Confirmation section names a future integration test placeholder (tests/integration/test_kolibri_vidyarthi_disjoint.sh) that asserts the two apps do not share filesystem state — actual test deferred to a post-MVP task"
+  - "Rollback plan paragraph describes how to revert (supersede ADR-0013; merge or split would be a multi-quarter migration)"
+  - "ADR cross-references SMO-0510 (schema content-type wiring carries Kolibri's vocabulary subset)"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 1
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "docs/adr/0000-template.md exists on main"
+  - "ADR number 0013 not yet allocated on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

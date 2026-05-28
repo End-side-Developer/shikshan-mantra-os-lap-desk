@@ -1,0 +1,87 @@
+---
+# tasks/open/SMO-0511-schema-exercise-sql.yml
+#
+# Add the per-engine exercise schema for the SQL engine. Modules that set
+# sub_engine: sql will be validated against this schema by modulectl.
+
+id: SMO-0511
+title: "Add exercises/sql.schema.json (prompt, starter, expected, assertions, fixtures, hints, rubric)"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/exercises/sql.schema.json"
+    - "modules/catalogs/schemas/exercises/README.md"
+    - "tests/manifests/test_sql_exercise_schema.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "modules/catalogs/schemas/module.schema.json"
+  inputs:
+    schema_id: "sql"
+    locked_fields:
+      id: "string, required, slug pattern"
+      title: "object with en and hi keys (both required strings) — en/hi parity required"
+      prompt: "object with en and hi keys (both required, learner-facing prompt text)"
+      starter_sql: "string, optional, pre-filled into the editor"
+      fixtures: "array of strings, each a repo-relative path under the module's content/fixtures/ to a .sql file loaded before grading"
+      expected:
+        result_set: "array of objects (rows) or array of arrays — the canonical result the learner's query must match"
+        ordered: "boolean, default false — when true, row order matters"
+        compare: "string enum [exact, columns-only, ignore-case-strings], default exact"
+      assertions: "array of objects with type (string enum [row-count, contains-column, regex-match]) and value"
+      hints: "array of objects with after_attempt (integer) and text (object en+hi)"
+      rubric: "object mapping criterion name to {weight: number, description: object en+hi}"
+      locale: "object naming default locale (en or hi)"
+    locked_decision: "v1 SQL exercises are deterministic — same fixtures + same query = same result. The expected.result_set is the source of truth; assertions provide weaker partial-credit hooks for the rubric. en/hi parity on all learner-visible strings is enforced at schema level via required keys on the locale objects."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/manifests/test_sql_exercise_schema.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/exercises/sql.schema.json"
+    - "modules/catalogs/schemas/exercises/README.md"
+
+S:
+  - "modules/catalogs/schemas/exercises/sql.schema.json declares $schema = https://json-schema.org/draft/2020-12/schema and $id = https://shikshan-mantra-os/schemas/exercises/sql.schema.json"
+  - "sql.schema.json sets additionalProperties: false at the root and on every object it defines"
+  - "sql.schema.json required keys at root: id, title, prompt, expected — matches inputs.locked_fields"
+  - "sql.schema.json title and prompt are objects with required keys en and hi (en/hi parity at schema level)"
+  - "sql.schema.json hints[*].text and rubric[*].description objects also require en+hi keys"
+  - "sql.schema.json expected.compare is an enum exactly [exact, columns-only, ignore-case-strings] with default exact"
+  - "sql.schema.json assertions[*].type is an enum exactly [row-count, contains-column, regex-match]"
+  - "modules/catalogs/schemas/exercises/README.md documents (a) one paragraph each on the seven core fields, (b) a 10-line fixture example of a valid SQL exercise, (c) cross-link to ADR-0011 (IPC) and ADR-0015 (sandbox), (d) note that fixtures paths are resolved relative to the module root"
+  - "tests/manifests/test_sql_exercise_schema.py is pytest-compatible and contains: (1) a round-trip test on the README example fixture, (2) a mutation test that drops 'expected' and asserts failure, (3) a mutation test that drops 'hi' from title and asserts failure (en/hi parity guard), (4) a mutation test that adds an unknown root key and asserts failure (additionalProperties guard), (5) a mutation test that puts an unknown assertion type and asserts failure"
+  - "All files validate with `python -m jsonschema` and the test passes with `python -m pytest tests/manifests/test_sql_exercise_schema.py`"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 45
+  max_files_changed: 3
+  max_diff_lines: 280
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0510 (module.schema.json updates) is on main — this schema is referenced from there"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

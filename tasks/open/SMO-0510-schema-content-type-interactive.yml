@@ -1,0 +1,82 @@
+---
+# tasks/open/SMO-0510-schema-content-type-interactive.yml
+#
+# Extend modules/catalogs/schemas/module.schema.json to admit the new
+# Vidyarthi content types: interactive-runner and quiz. Add optional
+# fields sub_engine and exercise_spec.
+
+id: SMO-0510
+title: "Extend module.schema.json: interactive-runner + quiz content_types, sub_engine, exercise_spec"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/module.schema.json"
+    - "tests/manifests/test_module_schema_interactive.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0013-kolibri-relationship.md"
+  inputs:
+    content_types_to_add:
+      - "interactive-runner"
+      - "quiz"
+    new_optional_fields:
+      sub_engine:
+        type: "string"
+        description: "Identifier of the engine subprocess that runs this module's exercises (e.g., 'sql', 'web', 'code', 'ctf'). Required when content_type is interactive-runner."
+        examples: ["sql", "web", "code", "ctf"]
+      exercise_spec:
+        type: "object"
+        description: "Engine-specific spec, validated against modules/catalogs/schemas/exercises/<sub_engine>.schema.json by a downstream linter."
+    locked_decision: "Two new content_type enum values land here; sub_engine and exercise_spec are added as optional fields at module root. interactive-runner requires sub_engine; quiz does not (it's handled in-process by the frontend). Per-engine exercise schemas live under modules/catalogs/schemas/exercises/ and are NOT inlined here — module.schema.json only declares exercise_spec as a free-form object."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/manifests/test_module_schema_interactive.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/module.schema.json"
+
+S:
+  - "module.schema.json declares $schema = https://json-schema.org/draft/2020-12/schema (no change if already there)"
+  - "module.schema.json content_type enum gains exactly two new values: 'interactive-runner' and 'quiz' (existing values preserved)"
+  - "module.schema.json gains optional field sub_engine (string, no enum constraint at root — engines may be added without a schema bump)"
+  - "module.schema.json gains optional field exercise_spec (object, additionalProperties allowed — validated by a separate per-engine schema downstream)"
+  - "module.schema.json adds a conditional (if/then) clause: if content_type == interactive-runner, then sub_engine is required"
+  - "module.schema.json keeps additionalProperties: false at the root and on any new objects it introduces"
+  - "tests/manifests/test_module_schema_interactive.py is pytest-compatible and contains: (1) a round-trip test that a valid interactive-runner module with sub_engine='sql' validates, (2) a round-trip test that a valid quiz module without sub_engine validates, (3) a mutation test that an interactive-runner module WITHOUT sub_engine fails validation, (4) a mutation test that an unknown content_type fails validation, (5) a mutation test that an unknown top-level key (additionalProperties guard) fails validation"
+  - "Existing modules/core/*/manifest.yml files (if any) still validate against the updated schema"
+  - "All user-visible strings introduced in the schema (descriptions consumed by `vidyarthi-modulectl validate` output) note that en/hi parity is required at the module-manifest level (parity enforced by a different schema check; document the expectation in a $comment field at minimum)"
+  - "tests/manifests/test_module_schema_interactive.py is shellcheck/yamllint-irrelevant (pure Python) and importable from repo root with python -m pytest"
+
+R:
+  max_tokens: 80000
+  max_wall_minutes: 30
+  max_files_changed: 2
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "modules/catalogs/schemas/module.schema.json exists on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

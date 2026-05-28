@@ -1,0 +1,88 @@
+---
+# tasks/open/SMO-0580-vidyarthi-modulectl-cli.yml
+#
+# vidyarthi-modulectl CLI: verify-signature, install, list, remove.
+# This is the v1 authoring + module-management surface per ADR-0016.
+
+id: SMO-0580
+title: "vidyarthi-modulectl CLI: verify-signature, install, list, remove, validate"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/local/bin/vidyarthi-modulectl"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/modulectl/__init__.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/modulectl/verify.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/modulectl/install.py"
+    - "tests/cli/test_modulectl.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0016-authoring-roadmap.md"
+    - "modules/catalogs/schemas/module.schema.json"
+    - "modules/catalogs/schemas/exercises/sql.schema.json"
+    - "modules/catalogs/schemas/exercises/quiz.schema.json"
+  inputs:
+    subcommands:
+      validate: "vidyarthi-modulectl validate <module-dir> — validates manifest.yml against module.schema.json and each exercise against its sub_engine schema. Returns exit 0 on success, 1 on validation failure with a human-readable diagnostic."
+      verify-signature: "vidyarthi-modulectl verify-signature <module.tar.gz> — checks the bundle's detached signature against the official catalog signing key. Stub key path: /usr/share/shikshan/keys/official.pub. Exit 0 if valid, 2 if invalid, 3 if key missing."
+      install: "vidyarthi-modulectl install <module.tar.gz | module-dir> — verifies signature (unless --skip-signature passed AND policy.yml allows it), validates schema, copies into ~/.local/share/shikshan/modules/<module-id>/. Refuses if content_type / sub_engine not in policy.yml allowed_*."
+      list: "vidyarthi-modulectl list — prints installed modules (id, version, title-en) one per line. No flags."
+      remove: "vidyarthi-modulectl remove <module-id> — removes ~/.local/share/shikshan/modules/<module-id>/ after a 'are you sure' prompt (suppressed by --yes)."
+    runtime: "Python 3.11+, no third-party deps beyond what shikshan-vidyarthi already pulls (PyYAML + jsonschema)."
+    locked_decision: "/usr/local/bin/vidyarthi-modulectl is a thin shell wrapper exec'ing python3 -m shikshan_vidyarthi_modulectl (or equivalent) into /usr/share/shikshan/vidyarthi/modulectl/. Subcommands dispatched via argparse. Policy enforcement (allowed_content_types, allowed_sub_engines) happens in install.py before any filesystem copy."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/cli/test_modulectl.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/local/bin/vidyarthi-modulectl"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/modulectl/install.py"
+
+S:
+  - "config/includes.chroot/usr/local/bin/vidyarthi-modulectl is `#!/usr/bin/env bash`, set -euo pipefail, mode 0755, shellcheck-clean, exec's python3 with the modulectl package path; passes argv through"
+  - "config/includes.chroot/usr/share/shikshan/vidyarthi/modulectl/__init__.py defines an argparse-based main() with subcommands matching inputs.subcommands"
+  - "modulectl/verify.py implements verify-signature: reads <bundle>.sig and the public key at /usr/share/shikshan/keys/official.pub, returns 0/2/3 per inputs.subcommands; uses Python stdlib `hashlib` + `subprocess` calling out to `gpg --verify` or `openssl dgst -verify` (stub OK as long as the exit-code contract is honored)"
+  - "modulectl/install.py implements install: (1) optional verify-signature step, (2) parses manifest.yml and validates against module.schema.json, (3) loads /etc/shikshan/policy.yml and rejects if content_type not in allowed_content_types OR sub_engine not in allowed_sub_engines, (4) copies into ~/.local/share/shikshan/modules/<id>/, (5) prints 'Installed <id> v<version>'"
+  - "modulectl validate, list, remove are implemented in the same package; remove honors --yes; list reads ~/.local/share/shikshan/modules/*/manifest.yml and prints one line each"
+  - "All Python files are Python 3.11+ syntax, pass `python3 -m py_compile`, include SPDX-License-Identifier header"
+  - "tests/cli/test_modulectl.sh is `#!/usr/bin/env bash`, set -euo pipefail, shellcheck-clean, mode 0755, asserts: (1) vidyarthi-modulectl --help exits 0 and lists all 5 subcommands, (2) validate on modules/core/sql-basics/ (from SMO-0560) exits 0, (3) validate on a tampered fixture (missing 'hi' in title) exits 1, (4) install with policy.yml allowed_sub_engines lacking 'sql' exits non-zero, (5) list after a clean install shows the installed module, (6) remove --yes removes it and list confirms"
+  - "tests/cli/test_modulectl.sh runs in a temp HOME so it does NOT touch real ~/.local/share/shikshan/"
+  - "Tests pass with `bash tests/cli/test_modulectl.sh`"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 50
+  max_files_changed: 5
+  max_diff_lines: 280
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0505 (ADR-0016 authoring roadmap) is on main"
+  - "SMO-0510 (module schema content types) is on main"
+  - "SMO-0511 (sql exercise schema) is on main"
+  - "SMO-0512 (quiz exercise schema) is on main"
+  - "SMO-0520 (policy content-type gates) is on main"
+  - "SMO-0560 (sql-basics fixture module exists for tests to target) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

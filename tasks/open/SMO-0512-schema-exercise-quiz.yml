@@ -1,0 +1,77 @@
+---
+# tasks/open/SMO-0512-schema-exercise-quiz.yml
+#
+# Add the quiz exercise schema. Quizzes are handled in-process by the
+# frontend (no engine subprocess) per ADR-0011.
+
+id: SMO-0512
+title: "Add exercises/quiz.schema.json (MCQ + fill-blank, en/hi parity)"
+type: build-config
+linked_adr: "docs/adr/0011-engine-ipc.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/exercises/quiz.schema.json"
+    - "tests/manifests/test_quiz_exercise_schema.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "modules/catalogs/schemas/module.schema.json"
+  inputs:
+    schema_id: "quiz"
+    locked_fields:
+      id: "string, required, slug pattern"
+      kind: "string enum [mcq, fill-blank], required"
+      question: "object with en and hi keys (required strings)"
+      choices: "array of objects with id (string) and label (object en+hi); required when kind=mcq"
+      correct: "string (choice id) OR array of strings (acceptable answers for fill-blank)"
+      explanation: "object with en+hi keys, optional"
+      tags: "array of strings, optional"
+    locked_decision: "Quizzes are handled by the frontend in-process — no engine subprocess. Grading is exact-match for fill-blank (case-insensitive when the schema sets case_sensitive: false), set-membership for MCQ. Locale parity is enforced via required en+hi keys on every learner-visible field."
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/manifests/test_quiz_exercise_schema.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/exercises/quiz.schema.json"
+
+S:
+  - "modules/catalogs/schemas/exercises/quiz.schema.json declares $schema = https://json-schema.org/draft/2020-12/schema and $id = https://shikshan-mantra-os/schemas/exercises/quiz.schema.json"
+  - "quiz.schema.json sets additionalProperties: false at root and on every nested object"
+  - "quiz.schema.json required keys at root: id, kind, question, correct"
+  - "quiz.schema.json uses a oneOf (or if/then) to require choices when kind=mcq, and to allow correct=array when kind=fill-blank"
+  - "quiz.schema.json question, choices[*].label, and explanation objects all require both en and hi keys (en/hi parity guard at schema level)"
+  - "quiz.schema.json kind is an enum exactly [mcq, fill-blank]"
+  - "tests/manifests/test_quiz_exercise_schema.py is pytest-compatible and contains: (1) a round-trip test on a valid MCQ fixture, (2) a round-trip test on a valid fill-blank fixture, (3) a mutation test that drops 'hi' from question and asserts failure, (4) a mutation test that sets kind=mcq without choices and asserts failure, (5) a mutation test that adds an unknown root key and asserts failure"
+  - "Tests pass with `python -m pytest tests/manifests/test_quiz_exercise_schema.py`"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 30
+  max_files_changed: 2
+  max_diff_lines: 150
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0500 (ADR-0011) is on main"
+  - "SMO-0510 (module.schema.json) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null
