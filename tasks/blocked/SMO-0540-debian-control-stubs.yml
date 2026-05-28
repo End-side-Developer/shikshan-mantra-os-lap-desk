@@ -1,5 +1,28 @@
 ---
-# tasks/open/SMO-0540-debian-control-stubs.yml
+# tasks/blocked/SMO-0540-debian-control-stubs.yml
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ BLOCKED — label: needs-human                                            │
+# │ Blocked at: 2026-05-28  by: agent:claude-code (during /task-claim)      │
+# │                                                                          │
+# │ Reason: preconditions[0] BLOCKING gate fired. debian/** is NOT in       │
+# │   policies/agent-allowlist.yml `allow:` as of 2026-05-28, and no PR     │
+# │   carrying `allowlist-override` + `solo-maintainer-override` exists at   │
+# │   claim time. Per the contract this task cannot be claimed/implemented   │
+# │   until the gate is cleared.                                             │
+# │                                                                          │
+# │ Human action required (pick one):                                        │
+# │   (a) Land a human-authored allowlist-expansion PR adding `debian/**`    │
+# │       to policies/agent-allowlist.yml `allow:`. policies/ is a protected │
+# │       path (CLAUDE.md "Never"), so this PR needs `allowlist-override` +   │
+# │       `solo-maintainer-override` labels and cannot be done by the agent. │
+# │       Once merged, return this file to tasks/open/ and re-run            │
+# │       /task-claim SMO-0540.                                              │
+# │   (b) Reclassify to type:adr — rewrite as a pure ADR describing the      │
+# │       future debian/ packaging layout, and file the actual debian/       │
+# │       files under a follow-up task after the allowlist is expanded       │
+# │       (see header inputs.flag_for_human / option (b)).                   │
+# └─────────────────────────────────────────────────────────────────────────┘
 #
 # Stub debian/ packaging metadata for shikshan-vidyarthi and
 # shikshan-engines-core. Binaries are NOT built here — the binary work is
