@@ -1,0 +1,27 @@
+id: select-all
+version: "1.0.0"
+prompt:
+  en: "Write a query to return all rows from the employees table."
+  hi: "employees तालिका की सभी पंक्तियाँ लौटाने के लिए एक क्वेरी लिखें।"
+starter_sql: "SELECT "
+fixtures:
+  - "content/fixtures/employees.sql"
+assertions:
+  - kind: no_error
+    message:
+      en: "Your query must run without error."
+      hi: "आपकी क्वेरी बिना त्रुटि के चलनी चाहिए।"
+  - kind: row_count
+    expected: 10
+    message:
+      en: "Expected 10 rows — one per employee."
+      hi: "10 पंक्तियाँ अपेक्षित हैं — प्रत्येक कर्मचारी के लिए एक।"
+  - kind: column_names
+    expected: ["id", "name", "department_id", "salary"]
+    message:
+      en: "Select all columns from employees."
+      hi: "employees से सभी कॉलम चुनें।"
+hints:
+  - en: "Use SELECT * to select all columns."
+    hi: "सभी कॉलम चुनने के लिए SELECT * उपयोग करें।"
+locale: ["en", "hi"]

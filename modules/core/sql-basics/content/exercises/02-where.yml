@@ -1,0 +1,22 @@
+id: where-department
+version: "1.0.0"
+prompt:
+  en: "Return the names of employees who work in the Engineering department."
+  hi: "Engineering विभाग में काम करने वाले कर्मचारियों के नाम लौटाएँ।"
+starter_sql: "SELECT "
+fixtures:
+  - "content/fixtures/employees.sql"
+assertions:
+  - kind: no_error
+    message:
+      en: "Your query must run without error."
+      hi: "क्वेरी बिना त्रुटि चलनी चाहिए।"
+  - kind: row_count
+    expected: 4
+    message:
+      en: "Engineering has 4 employees (Alice, Bob, Eve, Hank)."
+      hi: "Engineering में 4 कर्मचारी हैं।"
+hints:
+  - en: "Join employees with departments and use WHERE departments.name = 'Engineering'."
+    hi: "employees को departments से JOIN करें और WHERE departments.name = 'Engineering' उपयोग करें।"
+locale: ["en", "hi"]
