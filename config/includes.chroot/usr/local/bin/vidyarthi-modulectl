@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+"""vidyarthi-modulectl — CLI entrypoint (SMO-0580)."""
+
+import argparse
+import pathlib
+import sys
+
+_LIB = pathlib.Path("/usr/share/shikshan/vidyarthi/modulectl")
+# When running from the repo tree, __file__ is under
+# config/includes.chroot/usr/local/bin/ — walk up to chroot root then down.
+_CHROOT = pathlib.Path(__file__).parent.parent.parent.parent
+_DEV_LIB = _CHROOT / "usr/share/shikshan/vidyarthi/modulectl"
+sys.path.insert(0, str(_LIB if _LIB.exists() else _DEV_LIB))
+
+from verify import validate_manifest, verify_signature  # noqa: E402
+from install import install, list_modules, remove  # noqa: E402
+
+
+def cmd_validate(args):
+    path = pathlib.Path(args.path)
+    errors = validate_manifest(path)
+    if errors:
+        for e in errors:
+            print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    print(f"OK: {path} validates against module.schema.json")
+
+
+def cmd_verify(args):
+    path = pathlib.Path(args.path)
+    errors = validate_manifest(path)
+    if errors:
+        for e in errors:
+            print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    sig_errors = verify_signature(path)
+    for e in sig_errors:
+        print(f"WARN: {e}")
+    print(
+        f"OK: {path} schema valid (signature: {'present' if not sig_errors else 'absent/unverified'})"
+    )
+
+
+def cmd_install(args):
+    path = pathlib.Path(args.path)
+    errors = validate_manifest(path)
+    if errors:
+        for e in errors:
+            print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    try:
+        install(path, force=args.force)
+        print(f"Installed {path.name}")
+    except FileExistsError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_list(_args):
+    mods = list_modules()
+    if not mods:
+        print("No modules installed.")
+        return
+    for m in mods:
+        print(m.name)
+
+
+def cmd_remove(args):
+    try:
+        remove(args.module_id)
+        print(f"Removed {args.module_id}")
+    except FileNotFoundError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    p = argparse.ArgumentParser(
+        prog="vidyarthi-modulectl",
+        description="Manage Vidyarthi learning modules.",
+    )
+    sub = p.add_subparsers(dest="command", required=True)
+
+    v = sub.add_parser("validate", help="Validate a module bundle against its schema")
+    v.add_argument("path", help="Path to the module bundle directory")
+
+    vf = sub.add_parser("verify", help="Validate schema + check cosign signature")
+    vf.add_argument("path", help="Path to the module bundle directory")
+
+    i = sub.add_parser("install", help="Install a local module bundle (dev/unsigned)")
+    i.add_argument("path", help="Path to the module bundle directory")
+    i.add_argument("--force", action="store_true", help="Overwrite existing installation")
+
+    sub.add_parser("list", help="List installed modules")
+
+    r = sub.add_parser("remove", help="Remove an installed module")
+    r.add_argument("module_id", help="Module id to remove")
+
+    args = p.parse_args()
+    dispatch = {
+        "validate": cmd_validate,
+        "verify": cmd_verify,
+        "install": cmd_install,
+        "list": cmd_list,
+        "remove": cmd_remove,
+    }
+    dispatch[args.command](args)
+
+
+if __name__ == "__main__":
+    main()
