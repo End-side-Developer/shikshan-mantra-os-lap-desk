@@ -1,0 +1,42 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $VidyarthiWindow: Adw.ApplicationWindow {
+  title: "Vidyarthi";
+  default-width: 900;
+  default-height: 650;
+
+  Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {
+      title-widget: Adw.WindowTitle {
+        title: "Vidyarthi";
+        subtitle: _("Self-Learning Practice");
+      };
+    }
+
+    content: Gtk.Box {
+      orientation: horizontal;
+
+      Gtk.ScrolledWindow {
+        width-request: 280;
+        hscrollbar-policy: never;
+
+        Gtk.ListView module_list {
+          hexpand: false;
+        }
+      }
+
+      Gtk.Separator {
+        orientation: vertical;
+      }
+
+      Adw.StatusPage welcome_status {
+        hexpand: true;
+        icon-name: "accessories-text-editor-symbolic";
+        title: _("Welcome to Vidyarthi");
+        description: _("Select a module from the list to begin practising.");
+      }
+    };
+  }
+}
