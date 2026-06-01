@@ -1,0 +1,60 @@
+# Task contract for SMO-0700 — author ADR-0017 locking content backend architecture.
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0700
+title: "ADR-0017 content backend architecture (VirtualBox host-only, second-VM, FastAPI, /health)"
+type: adr
+agent: claude-code
+
+linked_plan: plans/active/content-backend-bootstrap.md
+linked_adr: docs/adr/0017-content-backend-architecture.md
+
+I:
+  files_in_scope:
+    - "docs/adr/0017-content-backend-architecture.md"
+    - "docs/adr/README.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "plans/active/content-backend-bootstrap.md"
+    - "docs/architecture/overview.md"
+    - "docs/architecture/api/README.md"
+    - "docs/architecture/api/auth-v1.yaml"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "docs/adr/0000-template.md"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0017-content-backend-architecture.md"
+
+S:
+  - "docs/adr/0017-content-backend-architecture.md exists and follows docs/adr/0000-template.md structure."
+  - "ADR Decision section explicitly locks: VirtualBox host-only network, backend in a second Debian VM, Python 3 + FastAPI + Uvicorn under systemd, self-signed dev CA, /etc/shikshan/backend.yml runtime config, single /health endpoint for phase 1."
+  - "ADR Consequences section lists the deferred items (auth-v1 impl, content APIs, persistent storage, container packaging) as out of scope for phase 1."
+  - "docs/adr/README.md index updated to reference ADR-0017."
+
+R:
+  max_tokens: 40000
+  max_wall_minutes: 20
+  max_files_changed: 2
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "plans/active/content-backend-bootstrap.md is merged and referenced as linked_plan."
+  - "No other ADR-0017-* file already exists."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"

@@ -1,0 +1,54 @@
+# Task contract for SMO-0702 — VirtualBox host-only networking guide.
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0702
+title: "Runbook: VirtualBox host-only network vboxnet-smo for OS-VM <-> backend-VM"
+type: docs
+agent: claude-code
+
+linked_plan: plans/active/content-backend-bootstrap.md
+linked_adr: docs/adr/0017-content-backend-architecture.md
+
+I:
+  files_in_scope:
+    - "docs/runbooks/virtualbox-host-only-network.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "plans/active/content-backend-bootstrap.md"
+    - "docs/adr/0017-content-backend-architecture.md"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/runbooks/virtualbox-host-only-network.md"
+
+S:
+  - "Runbook documents creating a host-only adapter named vboxnet-smo on 192.168.56.0/24, DHCP disabled."
+  - "Runbook gives static-IP assignments: OS-VM = 192.168.56.10, backend-VM = 192.168.56.20."
+  - "Runbook covers Windows Defender Firewall inbound rule for port 8443 from the host-only subnet so the host can curl the backend too."
+  - "Runbook lists at least four common pitfalls (DHCP on by default, promiscuous mode for guest-to-guest, adapter attached but cable unplugged, IP-as-SAN mismatch with cert)."
+  - "PowerShell command snippets use $env: syntax (Windows host)."
+
+R:
+  max_tokens: 35000
+  max_wall_minutes: 20
+  max_files_changed: 1
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0700 (ADR-0017) merged so subnet and port choices are locked."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"

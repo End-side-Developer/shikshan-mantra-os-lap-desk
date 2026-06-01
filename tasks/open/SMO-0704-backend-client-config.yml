@@ -1,0 +1,59 @@
+# Task contract for SMO-0704 — OS-side backend client config schema + example.
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0704
+title: "OS-side backend client config: backend-config schema + /etc/shikshan/backend.yml.example"
+type: build-config
+agent: claude-code
+
+linked_plan: plans/active/content-backend-bootstrap.md
+linked_adr: docs/adr/0017-content-backend-architecture.md
+
+I:
+  files_in_scope:
+    - "modules/catalogs/schemas/backend-config.schema.json"
+    - "config/includes.chroot/etc/shikshan/backend.yml.example"
+    - ".claude/skills/lint-manifest/SKILL.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "plans/active/content-backend-bootstrap.md"
+    - "docs/adr/0017-content-backend-architecture.md"
+    - "docs/architecture/api/README.md"
+    - "modules/catalogs/schemas/catalog.schema.json"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/schemas/backend-config.schema.json"
+    - "config/includes.chroot/etc/shikshan/backend.yml.example"
+
+S:
+  - "modules/catalogs/schemas/backend-config.schema.json is JSON Schema draft 2020-12 with required: backend.url (https URI), backend.ca_cert_path (absolute path), backend.timeout_ms (integer 100..30000)."
+  - "config/includes.chroot/etc/shikshan/backend.yml.example validates cleanly against the schema."
+  - ".claude/skills/lint-manifest/SKILL.md is updated to recognise backend.yml against backend-config.schema.json."
+  - "Both files are listed in policies/agent-allowlist.yml allow: (or already covered by an existing glob)."
+
+R:
+  max_tokens: 40000
+  max_wall_minutes: 25
+  max_files_changed: 5
+  max_diff_lines: 250
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0700 (ADR-0017) merged so the config key contract is locked."
+  - "modules/catalogs/schemas/backend-config.schema.json does not yet exist."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"
