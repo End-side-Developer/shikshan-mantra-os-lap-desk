@@ -39,6 +39,7 @@ Run autonomously. Goal: maximize tasks shipped per turn. Stop only on:
    git checkout main && git merge --no-ff agent/SMO-NNNN-<slug> -m "Merge SMO-NNNN: <summary>"
    ```
 5. Close the task: `git mv tasks/in-progress/SMO-NNNN.yml tasks/completed/`. Commit `chore(tasks): SMO-NNNN close — <summary>`.
+5a. **Plan archive check.** If the closed task had a non-null `linked_plan:` pointing at `plans/active/<slug>.md`, read that plan's `linked_tasks:` frontmatter. If every ID in that list is now present in `tasks/completed/`, `git mv plans/active/<slug>.md plans/completed/<slug>.md`, flip `status: active` → `status: completed` in the frontmatter, and commit `chore(plans): archive <slug> — all linked tasks merged`. If any linked task is still in `open/`, `in-progress/`, or `blocked/`, leave the plan in `active/` and continue. Skip this step entirely if the task had no `linked_plan:` or the plan path is already under `plans/completed/`.
 6. Push main to origin.
 7. Report a one-line summary of what shipped, then immediately re-enter the loop with the next AI-doable task.
 

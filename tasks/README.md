@@ -65,3 +65,7 @@ The `agent-task-validate.yml` workflow runs on every PR labelled `agent-task` (o
 - `tasks/blocked/**` — agents move tasks here on Ψ-recovery; humans edit to add resolution notes.
 
 See [policies/agent-allowlist.yml](../policies/agent-allowlist.yml) for the canonical scope rules.
+
+## Plans
+
+Multi-task initiatives have a higher-altitude design doc in [plans/](../plans/). A task may reference its plan via the optional `linked_plan:` field in the schema (path must match `^plans/(active|completed)/[a-z0-9-]+\.md$`). Trivial one-off tasks need no plan. When every task linked to a plan is in `tasks/completed/`, the plan is archived from `plans/active/` to `plans/completed/` (see [.claude/commands/auto-task.md](../.claude/commands/auto-task.md) step 5a).

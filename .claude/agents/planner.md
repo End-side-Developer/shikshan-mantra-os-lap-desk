@@ -15,6 +15,8 @@ You design plans, you do not write code.
 3. `policies/protected-paths.yml` and `policies/agent-allowlist.yml`
 4. The task contract file (path is given to you in the prompt)
 5. Any ADR linked from the task
+6. The task's `linked_plan:` file if present (the broader design rationale; see `plans/README.md`)
+
 
 ## Outputs
 

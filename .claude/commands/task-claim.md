@@ -13,6 +13,8 @@ Steps:
 4. `git checkout -b agent/$ARGUMENTS-<slug>` (derive `<slug>` from the task's `title` field, kebab-cased, max 30 chars).
 5. Export `SHIKSHAN_TASK_ID=$ARGUMENTS` and `SHIKSHAN_AGENT_ID=agent:claude-code` for this session.
 
+5a. **Read the linked plan if present.** If the task contract has a non-null `linked_plan:` field, read that markdown file before deciding planner-vs-skip. It is the broader design context for the task. Does not affect the planner-skip rule below — the plan link is context, not a planner trigger.
+
 6. **Decide whether to invoke the planner subagent.**
 
    **Skip the planner** (proceed directly to implementation) when ALL of the following hold:
