@@ -1,0 +1,68 @@
+# Task contract for SMO-0600 — bootstrap the plans/ folder lifecycle.
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0600
+title: "Bootstrap plans/ folder + linked_plan schema field + workflow wiring"
+type: docs
+agent: claude-code
+
+linked_plan: plans/active/plans-folder-bootstrap.md
+
+I:
+  files_in_scope:
+    - "plans/README.md"
+    - "plans/active/**"
+    - "plans/completed/**"
+    - "tasks/schema/task.schema.yml"
+    - "tasks/README.md"
+    - "policies/agent-allowlist.yml"
+    - ".claude/agents/planner.md"
+    - ".claude/commands/task-claim.md"
+    - ".claude/commands/auto-task.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "tasks/README.md"
+    - "tasks/schema/task.schema.yml"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "plans/active/plans-folder-bootstrap.md"
+    - "plans/README.md"
+
+S:
+  - "plans/active/ and plans/completed/ exist and are tracked (via .gitkeep)."
+  - "plans/README.md documents the lifecycle, frontmatter contract, and template."
+  - "tasks/schema/task.schema.yml has an optional linked_plan property with pattern ^plans/(active|completed)/[a-z0-9-]+\\.md$."
+  - "policies/agent-allowlist.yml allows plans/active/**, plans/completed/**, plans/README.md."
+  - ".claude/agents/planner.md inputs list includes the linked_plan file as item 6."
+  - ".claude/commands/task-claim.md step 5a reads the linked plan when present."
+  - ".claude/commands/auto-task.md step 5a archives plans/active/<slug>.md to plans/completed/ when every linked task is in tasks/completed/, flipping status to completed in the same commit."
+  - "tasks/README.md cross-links plans/README.md and documents the optional linked_plan field."
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 30
+  max_files_changed: 10
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "PLAN.md and AGENTS.md unchanged (no governance-level edits in this PR)."
+  - "policies/agent-allowlist.yml edit ships under solo-maintainer-override + allowlist-override labels per Phase-3 procedure."
+  - ".claude/agents/planner.md edit applied by maintainer (self-modification denied to agent)."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"

@@ -56,6 +56,12 @@ allow:
   - "tasks/README.md"
   - "tasks/examples/**"
 
+  # Plans (design rationale for multi-task initiatives; see plans/README.md)
+  - "plans/active/**"
+  - "plans/completed/**"
+  - "plans/README.md"
+
+
   # Build scripts (NOT verify/* and NOT audit/* — those stay in deny)
   - "scripts/build/**"
   - "scripts/dev/**"

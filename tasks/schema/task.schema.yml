@@ -53,6 +53,11 @@ properties:
     pattern: "^docs/adr/[0-9]{4}-.+\\.md$"
     description: "Path to the ADR justifying this task, if architectural."
 
+  linked_plan:
+    type: ["string", "null"]
+    pattern: "^plans/(active|completed)/[a-z0-9-]+\\.md$"
+    description: "Path to the plan markdown that this task implements. Null for trivial one-off tasks. See plans/README.md."
+
   agent:
     type: string
     enum: [claude-code, copilot, human]
