@@ -1,0 +1,64 @@
+# Task contract for SMO-0703 — backend reference impl skeleton (FastAPI /health).
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0703
+title: "Backend reference impl skeleton in vendor/backend (FastAPI /health, systemd)"
+type: module-add
+agent: claude-code
+
+linked_plan: plans/active/content-backend-bootstrap.md
+linked_adr: docs/adr/0017-content-backend-architecture.md
+
+I:
+  files_in_scope:
+    - "vendor/backend/**"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "plans/active/content-backend-bootstrap.md"
+    - "docs/adr/0017-content-backend-architecture.md"
+    - "docs/adr/0003-vendor-strategy.md"
+    - "vendor/README.md"
+    - "pyproject.toml"
+
+O:
+  pr_url: null
+  tests_added:
+    - "vendor/backend/tests/test_health.py"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "vendor/backend/pyproject.toml"
+    - "vendor/backend/src/smo_backend/app.py"
+    - "vendor/backend/src/smo_backend/__main__.py"
+    - "vendor/backend/systemd/smo-backend.service"
+    - "vendor/backend/README.md"
+
+S:
+  - "vendor/backend/ exists with pyproject.toml pinning fastapi and uvicorn[standard] to explicit versions."
+  - "GET /health returns 200 with JSON body {\"status\": \"ok\", \"version\": \"0.1.0\"}."
+  - "__main__ entrypoint accepts --host, --port, --certfile, --keyfile and starts Uvicorn with TLS when both cert paths are provided."
+  - "systemd/smo-backend.service runs as unprivileged smo-be user, restarts on failure, references /etc/smo-backend/ for cert paths."
+  - "vendor/backend/tests/test_health.py covers /health with FastAPI TestClient; runs under pytest from vendor/backend/."
+  - "vendor/backend/README.md documents local-dev run and the systemd install path, and is cross-linked from vendor/README.md."
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 35
+  max_files_changed: 8
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0700 (ADR-0017) merged so port 8443 and the /health contract are locked."
+  - "vendor/backend/ does not yet exist."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"

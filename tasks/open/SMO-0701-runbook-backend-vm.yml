@@ -1,0 +1,55 @@
+# Task contract for SMO-0701 — backend VM provisioning runbook.
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0701
+title: "Runbook: provision smo-be-vm (Debian 13 + Python + dev CA) in VirtualBox"
+type: docs
+agent: claude-code
+
+linked_plan: plans/active/content-backend-bootstrap.md
+linked_adr: docs/adr/0017-content-backend-architecture.md
+
+I:
+  files_in_scope:
+    - "docs/runbooks/backend-vm-bootstrap.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "plans/active/content-backend-bootstrap.md"
+    - "docs/adr/0017-content-backend-architecture.md"
+    - "docs/runbooks/build-iso-locally.md"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/runbooks/backend-vm-bootstrap.md"
+
+S:
+  - "docs/runbooks/backend-vm-bootstrap.md walks from 'I have VirtualBox installed' to 'I have a running smo-be-vm with Python 3, an unprivileged smo-be user, and a dev CA + server cert installed'."
+  - "Runbook specifies VM sizing: 2 GB RAM, 20 GB disk, Debian 13 netinst."
+  - "Runbook documents attaching a transient NAT adapter for apt provisioning and the host-only adapter (per SMO-0702)."
+  - "Runbook contains the openssl command set to generate the dev CA and server cert with subjectAltName=IP:<host-only-ip>."
+  - "Runbook includes a 'tear-down' section so a maintainer can rebuild from scratch."
+
+R:
+  max_tokens: 40000
+  max_wall_minutes: 25
+  max_files_changed: 1
+  max_diff_lines: 300
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0700 (ADR-0017) merged so the runbook can cite locked interfaces."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"

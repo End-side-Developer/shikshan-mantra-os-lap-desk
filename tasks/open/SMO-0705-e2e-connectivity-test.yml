@@ -1,0 +1,59 @@
+# Task contract for SMO-0705 — E2E connectivity smoke test (OS-VM -> backend-VM /health).
+# Validates against tasks/schema/task.schema.yml.
+
+id: SMO-0705
+title: "E2E: OS-VM curls backend-VM /health over host-only HTTPS with pinned CA"
+type: tests
+agent: claude-code
+
+linked_plan: plans/active/content-backend-bootstrap.md
+linked_adr: docs/adr/0017-content-backend-architecture.md
+
+I:
+  files_in_scope:
+    - "tests/connectivity/test_health_roundtrip.sh"
+    - "docs/runbooks/connectivity-smoke-test.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "plans/active/content-backend-bootstrap.md"
+    - "docs/adr/0017-content-backend-architecture.md"
+    - "docs/runbooks/backend-vm-bootstrap.md"
+    - "docs/runbooks/virtualbox-host-only-network.md"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/connectivity/test_health_roundtrip.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "tests/connectivity/test_health_roundtrip.sh"
+    - "docs/runbooks/connectivity-smoke-test.md"
+
+S:
+  - "tests/connectivity/test_health_roundtrip.sh, when run inside smo-os-vm with NAT disabled, curls https://192.168.56.20:8443/health using --cacert /etc/shikshan/dev-ca.pem and asserts HTTP 200 + body {\"status\":\"ok\"} in under 1 second."
+  - "Script is shellcheck-clean and exits non-zero on any assertion failure."
+  - "docs/runbooks/connectivity-smoke-test.md walks a maintainer through the manual run on a fresh pair of VMs."
+  - "Runbook explicitly states this test is the plan-level hard gate for plan archival."
+
+R:
+  max_tokens: 35000
+  max_wall_minutes: 25
+  max_files_changed: 3
+  max_diff_lines: 200
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0700..SMO-0704 all merged."
+  - "A working smo-os-vm and smo-be-vm exist locally per the linked runbooks."
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+
+audit:
+  claimed_by: "agent:claude-code"
