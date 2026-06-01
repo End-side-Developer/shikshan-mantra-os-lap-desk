@@ -1,7 +1,7 @@
 ---
 slug: plans-folder-bootstrap
 title: Bootstrap the plans/ folder lifecycle (SMO-0600)
-status: active
+status: completed
 linked_tasks:
   - SMO-0600
 created: 2026-06-01
