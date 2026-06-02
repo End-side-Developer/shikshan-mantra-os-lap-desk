@@ -1,0 +1,41 @@
+# smo-backend.service — Shikshan Mantra OS content backend (phase-1, /health).
+#
+# Install on smo-be-vm:
+#   sudo cp smo-backend.service /etc/systemd/system/smo-backend.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now smo-backend
+#
+# Prerequisites (provisioned by docs/runbooks/backend-vm-bootstrap.md, SMO-0701;
+# this unit does NOT create them):
+#   - unprivileged user + group `smo-be`
+#   - source tree deployed at /opt/smo-backend (contains src/smo_backend/)
+#   - TLS cert + key at /etc/smo-backend/server.crt and /etc/smo-backend/server.key
+#     (server-side cert storage — distinct from the OS-VM client config at
+#     /etc/shikshan/backend.yml; see README.md)
+
+[Unit]
+Description=Shikshan Mantra OS content backend (phase-1, /health)
+Documentation=file:///opt/smo-backend/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smo-be
+Group=smo-be
+WorkingDirectory=/opt/smo-backend
+Environment=PYTHONPATH=/opt/smo-backend/src
+ExecStart=/usr/bin/python3 -m smo_backend --host 192.168.56.20 --port 8443 \
+    --certfile /etc/smo-backend/server.crt --keyfile /etc/smo-backend/server.key
+Restart=on-failure
+RestartSec=2
+
+# Phase-1 hardening baseline.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/etc/smo-backend
+
+[Install]
+WantedBy=multi-user.target

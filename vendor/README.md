@@ -23,6 +23,11 @@ Tracked (committed) files only:
   `reviewer_team`. The schema lands in SMO-0105 at
   `modules/catalogs/schemas/vendor-manifest.schema.json`.
 - `vendor/.gitkeep` — placeholder so the directory survives empty checkouts.
+- `vendor/backend/` — **first-party** content-backend reference impl (phase-1
+  `/health` server), NOT a vendored upstream clone. Tracked, but still never
+  built into the ISO or the SBOM. See [vendor/backend/README.md](backend/README.md)
+  and [ADR-0017](../docs/adr/0017-content-backend-architecture.md). It is
+  carved out of the `vendor/*/**` deny rule in `policies/protected-paths.yml`.
 
 Untracked (local-only) material:
 
@@ -62,7 +67,7 @@ in `vendor/MANIFEST.yml` is well-formed and that every
 Any commit that copies bytes out of `vendor/<name>/` and into `config/`,
 `modules/`, or `scripts/` **must** carry both of these trailers:
 
-```
+```text
 Source-Upstream: vendor/<name>@<short-SHA>
 Source-License: <SPDX-identifier>
 ```
