@@ -5,7 +5,7 @@ is connectivity only:** a single `GET /health` endpoint over TLS. No auth, no
 catalog, no content — those are deferred to follow-up plans.
 
 Authoritative decision: [docs/adr/0017-content-backend-architecture.md](../../docs/adr/0017-content-backend-architecture.md).
-Plan: [plans/active/content-backend-bootstrap.md](../../plans/active/content-backend-bootstrap.md).
+Plan: [plans/completed/content-backend-bootstrap.md](../../plans/completed/content-backend-bootstrap.md).
 
 > **Not a vendored upstream clone.** This is original first-party code that
 > happens to live under `vendor/` per [ADR-0003](../../docs/adr/0003-vendor-strategy.md).

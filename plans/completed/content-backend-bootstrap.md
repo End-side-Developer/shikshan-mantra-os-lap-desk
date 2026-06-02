@@ -1,7 +1,7 @@
 ---
 slug: content-backend-bootstrap
 title: Content backend bootstrap — phase 1 connectivity (SMO-0700..SMO-0705)
-status: active
+status: completed
 linked_adr: docs/adr/0017-content-backend-architecture.md
 linked_tasks:
   - SMO-0700
@@ -11,6 +11,7 @@ linked_tasks:
   - SMO-0704
   - SMO-0705
 created: 2026-06-01
+completed: 2026-06-02
 ---
 
 ## Context

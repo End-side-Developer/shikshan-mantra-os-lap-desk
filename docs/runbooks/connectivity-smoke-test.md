@@ -1,7 +1,7 @@
 # Connectivity smoke test — OS-VM → backend-VM `/health`
 
 > **This test is the plan-level HARD GATE for
-> [plans/active/content-backend-bootstrap.md](../../plans/active/content-backend-bootstrap.md).**
+> [plans/completed/content-backend-bootstrap.md](../../plans/completed/content-backend-bootstrap.md).**
 > The plan does not archive until
 > [`tests/connectivity/test_health_roundtrip.sh`](../../tests/connectivity/test_health_roundtrip.sh)
 > passes on a fresh pair of VMs. Locks: [ADR-0017](../adr/0017-content-backend-architecture.md).

@@ -206,7 +206,7 @@ in `policies/protected-paths.yml` `deny:` and may be edited to add the forward l
   * SMO-0703 — Backend reference implementation skeleton (`vendor/backend/`).
   * SMO-0704 — OS-side backend client config schema.
   * SMO-0705 — E2E connectivity test + acceptance doc (plan gate).
-* Related plan: [plans/active/content-backend-bootstrap.md](../../plans/active/content-backend-bootstrap.md)
+* Related plan: [plans/completed/content-backend-bootstrap.md](../../plans/completed/content-backend-bootstrap.md)
 * Related policies: `policies/protected-paths.yml` (vendor path governance, to be updated
   if `vendor/backend/` requires a deny entry in a follow-up task).
 * External references:
