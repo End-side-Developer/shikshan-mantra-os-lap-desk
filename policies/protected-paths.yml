@@ -55,12 +55,13 @@ deny:
   - "docs/adr/0001-debian-live-build.md"
   - "docs/adr/0002-audit-log-storage.md"
 
-  # Vendored upstream sources — clone directories only.
-  # vendor/MANIFEST.yml and vendor/README.md are intentionally NOT denied;
-  # they appear in policies/agent-allowlist.yml so agents may edit them
-  # under the `vendor-pin-update` label (see sensitive-change-labels.yml
-  # and docs/adr/0003-vendor-strategy.md).
-  - "vendor/*/**"
+  # Vendored upstream CLONE directories — denied PER-CLONE (not catch-all) so
+  # first-party trees like vendor/backend/ (ADR-0017) stay agent-editable.
+  # The hook (.claude/hooks/pre-tool-use/protected-paths.sh) does a flat,
+  # non-slash-aware OR over these globs, so a catch-all cannot exclude one
+  # subdir. Add one line here for every new vendor/MANIFEST.yml upstream.
+  - "vendor/debian-live-build/**"
+
 
   # Pre-commit configuration (the local gate)
   - ".pre-commit-config.yaml"
