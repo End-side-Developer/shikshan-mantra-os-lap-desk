@@ -1,0 +1,21 @@
+# /etc/shikshan/backend.yml — EXAMPLE
+# Shikshan Mantra OS content-backend client configuration.
+# Schema: modules/catalogs/schemas/backend-config.schema.json
+# Frozen by: ADR-0017 (content backend architecture)
+#
+# OS-side (client) config for reaching the phase-1 content backend over the
+# VirtualBox host-only network. Copy to /etc/shikshan/backend.yml and adjust
+# the IP / CA path for your backend VM.
+#
+# NOTE: this is the CLIENT side. The backend's own TLS cert + key live on the
+# backend VM under /etc/smo-backend/ (server-side) and are unrelated to this
+# file — see vendor/backend/README.md.
+
+backend:
+  # Backend base URL. MUST be https. Default host-only address per ADR-0017.
+  url: https://192.168.56.20:8443
+  # Absolute path to the pinned dev CA cert (distributed from the backend VM
+  # per the SMO-0701 runbook). No system-store trust required.
+  ca_cert_path: /etc/shikshan/backend-ca.crt
+  # Request timeout in ms. The SMO-0705 round-trip gate requires < 1000.
+  timeout_ms: 2000

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shikshan-mantra-os/schemas/backend-config.schema.json",
+  "title": "Shikshan Mantra OS content-backend client configuration",
+  "description": "JSON Schema for /etc/shikshan/backend.yml. Frozen by ADR-0017 (content backend architecture). OS-side (client) config for reaching the phase-1 content backend over the host-only network. Mirrors the auth.yml backend.* convention (ADR-0009).",
+  "type": "object",
+  "required": ["backend"],
+  "additionalProperties": false,
+  "properties": {
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "ca_cert_path", "timeout_ms"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "Backend base URL. MUST be https — TLS is pinned via ca_cert_path, no system-store trust. Default host-only address per ADR-0017: https://192.168.56.20:8443"
+        },
+        "ca_cert_path": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "Absolute path to the pinned CA cert that signed the backend's server cert (distributed from the backend VM, SMO-0701). e.g. /etc/shikshan/backend-ca.crt"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 30000,
+          "description": "Request timeout in milliseconds. The SMO-0705 /health round-trip gate requires the response in < 1000 ms."
+        }
+      }
+    }
+  }
+}
