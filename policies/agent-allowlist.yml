@@ -77,6 +77,9 @@ allow:
   - "vendor/MANIFEST.yml"
   - "vendor/README.md"
   - "vendor/.gitkeep"
+  # First-party backend reference impl (ADR-0017). Original code, not a
+  # vendored upstream clone — tracked, pre-commit applies, out of ISO SBOM.
+  - "vendor/backend/**"
 
   # .claude scaffold the agent may iterate on (subagents, skills, commands)
   - ".claude/agents/**"
