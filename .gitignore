@@ -125,6 +125,12 @@ credentials/
 tests/qemu/.cache/
 tests/qemu/logs/
 
+# Vidyarthi content staged into the overlay by scripts/build/sync-ui-to-iso.sh
+# (SMO-0615). Canonical source lives under modules/; these are materialised at
+# build time and must not be committed.
+/config/includes.chroot/usr/share/shikshan/modules/
+/config/includes.chroot/usr/share/shikshan/catalogs/
+
 # Vendored upstream sources (per docs/adr/0003-vendor-strategy.md)
 # Clones are materialised locally by scripts/dev/vendor-sync.py; only the
 # manifest, README, and .gitkeep are tracked.

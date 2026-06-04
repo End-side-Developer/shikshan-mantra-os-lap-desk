@@ -12,6 +12,8 @@
 #   branding/wallpapers/ -> config/includes.chroot/usr/share/backgrounds/shikshan/
 #   branding/logo/       -> config/includes.chroot/usr/share/shikshan/branding/logo/
 #   branding/tokens.json -> config/includes.chroot/usr/share/shikshan/branding/tokens.json
+#   modules/core/        -> config/includes.chroot/usr/share/shikshan/modules/      (SMO-0615)
+#   modules/catalogs/official.catalog.yml -> .../usr/share/shikshan/catalogs/official.catalog.yml
 #
 # Env overrides (test hook):
 #   SHIKSHAN_SRC_ROOT    repo root for sources    (default: script_dir/../..)
@@ -59,6 +61,8 @@ mkdir -p \
     "$UI_DST/login" \
     "$UI_DST/themes" \
     "$UI_DST/branding/logo" \
+    "$UI_DST/modules" \
+    "$UI_DST/catalogs" \
     "$WALL_DST"
 
 sync_dir "$SRC_ROOT/ui/launcher/"          "$UI_DST/launcher"
@@ -67,6 +71,12 @@ sync_dir "$SRC_ROOT/ui/themes/"            "$UI_DST/themes"
 sync_dir "$SRC_ROOT/branding/wallpapers/"  "$WALL_DST"
 sync_dir "$SRC_ROOT/branding/logo/"        "$UI_DST/branding/logo"
 sync_file "$SRC_ROOT/branding/tokens.json" "$UI_DST/branding/tokens.json"
+
+# Vidyarthi learning content (SMO-0615): modules + official catalog. The
+# launcher resolves bundles by id under usr/share/shikshan/modules/<id>/.
+sync_dir "$SRC_ROOT/modules/core/"                     "$UI_DST/modules"
+sync_file "$SRC_ROOT/modules/catalogs/official.catalog.yml" \
+                                                       "$UI_DST/catalogs/official.catalog.yml"
 
 # Strip .gitkeep markers from synced destinations so they don't ship on the ISO.
 find "$UI_DST" "$WALL_DST" -name '.gitkeep' -type f -delete 2>/dev/null || true

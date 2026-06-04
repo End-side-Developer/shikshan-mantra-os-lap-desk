@@ -8,7 +8,12 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VIDYARTHI="${REPO}/config/includes.chroot/usr/share/shikshan/vidyarthi"
 SQL_ENGINE="${VIDYARTHI}/engines/sql/main.py"
+RUNNER="${VIDYARTHI}/src/runner.py"
 SQL_BASICS="${REPO}/modules/core/sql-basics"
+CATALOG="${REPO}/modules/catalogs/official.catalog.yml"
+DESKTOP_FILE="${REPO}/config/includes.chroot/usr/share/applications/in.shikshan.Vidyarthi.desktop"
+SKEL_DESKTOP="${REPO}/config/includes.chroot/etc/skel/Desktop/in.shikshan.Vidyarthi.desktop"
+LAUNCHER="${REPO}/config/includes.chroot/usr/local/bin/vidyarthi"
 VERIFY_CHAIN="${REPO}/scripts/audit/verify-chain.py"
 ISO_PATH=""
 BWRAP_AVAIL=false
@@ -86,6 +91,34 @@ stage_3_vidyarthi_launch() {
     fi
 }
 
+# ── Stage 3b: Desktop app entry present + valid (SMO-0614) ─────────────────────
+stage_3b_desktop() {
+    if [ -f "${DESKTOP_FILE}" ]; then
+        _pass 3b "application .desktop entry present"
+    else
+        _fail 3b ".desktop entry missing: ${DESKTOP_FILE}"
+    fi
+    if [ -f "${SKEL_DESKTOP}" ]; then
+        _pass 3b "/etc/skel/Desktop launcher icon present"
+    else
+        _fail 3b "skel Desktop launcher missing: ${SKEL_DESKTOP}"
+    fi
+    if [ -f "${LAUNCHER}" ]; then
+        _pass 3b "vidyarthi GUI launcher wrapper present"
+    else
+        _fail 3b "vidyarthi launcher wrapper missing: ${LAUNCHER}"
+    fi
+    if command -v desktop-file-validate >/dev/null 2>&1; then
+        if desktop-file-validate "${DESKTOP_FILE}" 2>/dev/null; then
+            _pass 3b "desktop-file-validate clean"
+        else
+            _fail 3b "desktop-file-validate reported errors"
+        fi
+    else
+        _skip 3b "desktop-file-validate not installed — syntax check skipped"
+    fi
+}
+
 # ── Stage 4: Catalog lists sql-basics ─────────────────────────────────────────
 stage_4_catalog() {
     if grep -q "SQL Basics" "${SQL_BASICS}/manifest.yml" 2>/dev/null; then
@@ -97,6 +130,20 @@ stage_4_catalog() {
         _pass 4 "exercise 01-select.yml present"
     else
         _fail 4 "exercise 01-select.yml not found"
+    fi
+    if grep -q "id: sql-basics" "${CATALOG}" 2>/dev/null; then
+        _pass 4 "official catalog registers sql-basics"
+    else
+        _fail 4 "sql-basics not registered in official.catalog.yml"
+    fi
+    if python3 -c 'import yaml' 2>/dev/null; then
+        if python3 "${RUNNER}" --list 2>/dev/null | grep -q "sql-basics"; then
+            _pass 4 "headless runner --list shows sql-basics"
+        else
+            _fail 4 "headless runner --list did not list sql-basics"
+        fi
+    else
+        _skip 4 "PyYAML absent — runner --list check skipped"
     fi
 }
 
@@ -162,6 +209,30 @@ stage_6_grade() {
     fi
 }
 
+# ── Stage 6b: Headless runner round-trip through the frontend core ────────────
+# Drives catalog -> session -> engine subprocess -> xAPI (the GUI-equivalent
+# path), proving the launcher's code path works, not just the bare engine.
+stage_6b_headless() {
+    if ! python3 -c 'import yaml' 2>/dev/null; then
+        _skip 6b "PyYAML absent — headless runner check skipped"; return
+    fi
+    if [ ! -f "${RUNNER}" ]; then
+        _fail 6b "runner.py missing: ${RUNNER}"; return
+    fi
+    export XDG_DATA_HOME="${HOME}/.local/share"
+    local _out
+    if _out="$(python3 "${RUNNER}" sql-basics 01-select \
+            --sql "SELECT * FROM employees;" --submit 2>&1)"; then
+        if printf '%s' "${_out}" | grep -q "score=100 success=true"; then
+            _pass 6b "runner graded 01-select through the core → score=100"
+        else
+            _fail 6b "runner output unexpected: ${_out}"
+        fi
+    else
+        _fail 6b "runner exited non-zero: ${_out}"
+    fi
+}
+
 # ── Stage 7: xAPI scored statement written to learner.db ──────────────────────
 stage_7_xapi() {
     if [ "${BWRAP_AVAIL}" = "false" ]; then
@@ -215,9 +286,11 @@ stage_8_audit() {
 stage_1_iso
 stage_2_qemu
 stage_3_vidyarthi_launch
+stage_3b_desktop
 stage_4_catalog
 stage_5_sandbox
 stage_6_grade
+stage_6b_headless
 stage_7_xapi
 stage_8_audit
 

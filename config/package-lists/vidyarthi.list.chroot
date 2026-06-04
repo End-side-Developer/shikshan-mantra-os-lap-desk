@@ -1,7 +1,10 @@
 python3-gi
+python3-yaml
 gir1.2-gtk-4.0
 gir1.2-adw-1
 gir1.2-gtksource-5
 libadwaita-1-0
 blueprint-compiler
 meson
+bubblewrap
+libseccomp2

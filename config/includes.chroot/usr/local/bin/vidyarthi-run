@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# vidyarthi-run — headless exercise runner wrapper (SMO-0612).
+# Mirrors the vidyarthi-modulectl launcher pattern: prefer the installed tree,
+# fall back to the repo checkout when run from a developer working copy.
+
+INSTALLED="/usr/share/shikshan/vidyarthi/src/runner.py"
+if [ -f "$INSTALLED" ]; then
+    exec python3 "$INSTALLED" "$@"
+fi
+
+# Dev fallback: this wrapper lives at <chroot>/usr/local/bin/vidyarthi-run.
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEV="$SELF_DIR/../../share/shikshan/vidyarthi/src/runner.py"
+exec python3 "$DEV" "$@"

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Vidyarthi — Practice
+GenericName=SQL Practice
+Comment=Learn SQL with interactive exercises.
+Exec=vidyarthi
+Icon=/usr/share/shikshan/branding/logo/vidyarthi.svg
+Terminal=false
+Categories=Education;Development;
+Keywords=sql;practice;learn;database;vidyarthi;
+StartupNotify=true
+StartupWMClass=in.shikshan.Vidyarthi
