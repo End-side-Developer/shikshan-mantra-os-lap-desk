@@ -1,17 +1,19 @@
 using Gtk 4.0;
 using Adw 1;
 
+// SMO-0613: shell only. The module list, exercise list, SQL editor and results
+// panel are built programmatically in window.py (GtkSource + dynamic content).
 template $VidyarthiWindow: Adw.ApplicationWindow {
   title: "Vidyarthi";
-  default-width: 900;
-  default-height: 650;
+  default-width: 980;
+  default-height: 680;
 
   Adw.ToolbarView {
     [top]
     Adw.HeaderBar {
       title-widget: Adw.WindowTitle {
         title: "Vidyarthi";
-        subtitle: _("Self-Learning Practice");
+        subtitle: _("SQL Practice");
       };
     }
 
@@ -19,11 +21,16 @@ template $VidyarthiWindow: Adw.ApplicationWindow {
       orientation: horizontal;
 
       Gtk.ScrolledWindow {
-        width-request: 280;
+        width-request: 260;
         hscrollbar-policy: never;
 
-        Gtk.ListView module_list {
-          hexpand: false;
+        Gtk.Box sidebar_box {
+          orientation: vertical;
+          spacing: 6;
+          margin-top: 6;
+          margin-bottom: 6;
+          margin-start: 6;
+          margin-end: 6;
         }
       }
 
@@ -31,11 +38,10 @@ template $VidyarthiWindow: Adw.ApplicationWindow {
         orientation: vertical;
       }
 
-      Adw.StatusPage welcome_status {
+      Gtk.Box content_box {
+        orientation: vertical;
         hexpand: true;
-        icon-name: "accessories-text-editor-symbolic";
-        title: _("Welcome to Vidyarthi");
-        description: _("Select a module from the list to begin practising.");
+        vexpand: true;
       }
     };
   }

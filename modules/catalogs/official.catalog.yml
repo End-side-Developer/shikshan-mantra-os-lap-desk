@@ -13,6 +13,10 @@ trust_level: official
 update_url: null    # set at first release; current catalog is the in-repo file
 schema_version: 1
 
-modules: []         # populated as modules under modules/core/ ship
+modules:            # populated as modules under modules/core/ ship
+  - id: sql-basics
+    version: "1.0.0"
+    checksum: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    path: "modules/core/sql-basics/manifest.yml"
 
 signature: null     # populated by release-cosign-sign.yml

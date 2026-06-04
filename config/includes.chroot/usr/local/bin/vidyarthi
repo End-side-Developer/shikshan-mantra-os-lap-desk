@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# vidyarthi — GTK launcher wrapper (SMO-0614).
+# Started by the desktop entry in /usr/share/applications/in.shikshan.Vidyarthi.desktop.
+
+INSTALLED="/usr/share/shikshan/vidyarthi/src/main.py"
+if [ -f "$INSTALLED" ]; then
+    exec python3 "$INSTALLED" "$@"
+fi
+
+# Dev fallback: this wrapper lives at <chroot>/usr/local/bin/vidyarthi.
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEV="$SELF_DIR/../../share/shikshan/vidyarthi/src/main.py"
+exec python3 "$DEV" "$@"

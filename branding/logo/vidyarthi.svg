@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Vidyarthi SQL Practice">
+  <rect x="6" y="6" width="116" height="116" rx="22" fill="#0E4F88"/>
+  <!-- database cylinder -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="54" cy="40" rx="30" ry="12"/>
+    <path d="M24 40 v40 c0 6.6 13.4 12 30 12 s30 -5.4 30 -12 v-40"/>
+    <path d="M24 60 c0 6.6 13.4 12 30 12 s30 -5.4 30 -12"/>
+  </g>
+  <!-- gold "learning" spark -->
+  <path d="M96 78 l6 14 14 6 -14 6 -6 14 -6 -14 -14 -6 14 -6 z" fill="#F2A900"/>
+</svg>
