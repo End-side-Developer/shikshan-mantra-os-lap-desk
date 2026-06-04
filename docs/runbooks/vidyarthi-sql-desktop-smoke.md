@@ -121,6 +121,10 @@ bash scripts/build/build-iso.sh            # syncs content + builds the ISO
 bash tests/e2e/test_vidyarthi_sql_mvp.sh   # milestone gate (stages 1–8)
 ```
 
+> The ISO build compiles `window.blp` → `window.ui` automatically via
+> `config/hooks/live/0060-vidyarthi-blueprint.hook.chroot` (live-build does not
+> run meson). The manual L3 compile step is only needed for a dev checkout.
+
 On a booted ISO: log in as `student`, confirm the **Vidyarthi — Practice** icon is
 present both on the desktop and in the Education menu, launch it, and grade
 `01-select`. The E2E gate additionally asserts the `.desktop` entry validates, the

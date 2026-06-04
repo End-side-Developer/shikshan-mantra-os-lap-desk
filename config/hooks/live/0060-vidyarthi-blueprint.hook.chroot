@@ -1,0 +1,25 @@
+#!/bin/sh
+# config/hooks/live/0060-vidyarthi-blueprint.hook.chroot
+# Compile the Vidyarthi Blueprint UI to GtkBuilder XML (SMO-0613/SMO-0619).
+# live-build does not run meson, so window.ui is produced here from
+# blueprint-compiler (installed via config/package-lists/vidyarthi.list.chroot).
+# The GTK launcher loads window.ui at runtime. ADR-0009 / ADR-0012.
+
+set -eu
+
+UI_DIR=/usr/share/shikshan/vidyarthi/data/ui
+
+echo "[hook 0060] compiling Vidyarthi Blueprint UI"
+
+if [ ! -f "$UI_DIR/window.blp" ]; then
+    echo "[hook 0060] WARN: $UI_DIR/window.blp missing; skipping" >&2
+    exit 0
+fi
+
+if ! command -v blueprint-compiler >/dev/null 2>&1; then
+    echo "[hook 0060] ERROR: blueprint-compiler not installed" >&2
+    exit 1
+fi
+
+blueprint-compiler compile "$UI_DIR/window.blp" --output "$UI_DIR/window.ui"
+echo "[hook 0060] wrote $UI_DIR/window.ui"
