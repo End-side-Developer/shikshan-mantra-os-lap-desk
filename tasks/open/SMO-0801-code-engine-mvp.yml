@@ -1,0 +1,102 @@
+---
+# tasks/open/SMO-0801-code-engine-mvp.yml
+#
+# Python JSON-RPC engine: engines/code/main.py
+# Mirrors engines/sql/main.py exactly, replacing sqlite3 grading with
+# per-test-case subprocess.run of the learner's Python code.
+#
+# SPLIT WARNING: if implementing agent finds diff exceeds 280 lines,
+# stop and split into SMO-0801a (engine skeleton + init/shutdown/load_exercise)
+# and SMO-0801b (grade + timeout + feedback locale). File the split tasks
+# before claiming if the planner judges it won't fit.
+
+id: SMO-0801
+title: "engines/code/main.py: Python JSON-RPC engine (init/load_exercise/grade/shutdown)"
+type: build-config
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/code/main.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0019-code-engine-runtime.md"
+    - "docs/architecture/vidyarthi-engine-rpc.md"
+    - "modules/catalogs/schemas/exercises/code.schema.json"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/main.py"
+  inputs:
+    engine_id: "code"
+    runtime: >
+      Python 3 subprocess speaking JSON-RPC 2.0 over stdio per ADR-0011.
+      Pure stdlib only — no imports beyond sys, json, os, subprocess, tempfile,
+      signal, pathlib.
+    grading_contract: >
+      On grade RPC: write submission.code to a NamedTemporaryFile in /tmp,
+      iterate over exercise.test_cases. For each test_case: call
+      subprocess.run([sys.executable, tmp_file], input=test_case.input,
+      capture_output=True, text=True, timeout=max_execution_ms/1000).
+      Compare proc.stdout.strip() to test_case.expected_output.strip().
+      If all test_cases pass: score=1, success=True.
+      If any fail: score=0, success=False, feedback includes failing test info.
+      On subprocess.TimeoutExpired: return JSON-RPC error -32003 (execution timeout).
+      On SyntaxError/compile failure: return score=0, success=False, feedback
+      includes "SyntaxError" keyword. Hidden test_cases (hidden=true) still grade
+      but feedback omits their input/expected from the learner-facing message.
+    feedback_locale: >
+      All feedback dicts must have en + hi keys. Provide two hardcoded locale
+      dicts (PASS_FEEDBACK, FAIL_FEEDBACK, TIMEOUT_FEEDBACK) with en+hi strings.
+    locked_decision: >
+      No run method (returns -32601). No partial credit. Temp file is deleted
+      after grade regardless of outcome. Engine process is stateful across
+      load_exercise calls (holds current exercise in memory), exits cleanly on
+      shutdown RPC.
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/code/main.py"
+
+S:
+  - "engines/code/main.py is valid Python 3 with `if __name__ == '__main__':` entry"
+  - "Implements init, load_exercise, grade, shutdown per docs/architecture/vidyarthi-engine-rpc.md"
+  - "Returns -32601 for `run` method (not supported)"
+  - "Returns -32003 JSON-RPC error on subprocess.TimeoutExpired"
+  - "grade() with a correct hello-world submission returns {score: 1, success: true}"
+  - "grade() with wrong output returns {score: 0, success: false}"
+  - "grade() with Python SyntaxError returns score=0, feedback.en contains 'SyntaxError'"
+  - "Feedback has both `en` and `hi` keys in all return paths"
+  - "Temp file is always cleaned up (try/finally)"
+  - "Pure stdlib — no `import` of non-stdlib module"
+  - "`python -c 'import py_compile; py_compile.compile(\"engines/code/main.py\")'` exits 0"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 100000
+  max_wall_minutes: 40
+  max_files_changed: 1
+  max_diff_lines: 280
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0800 (ADR-0019) is on main"
+  - "SMO-0513 (code exercise schema) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human; consider split into SMO-0801a/b"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

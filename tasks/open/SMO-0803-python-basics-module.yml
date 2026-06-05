@@ -1,0 +1,136 @@
+---
+# tasks/open/SMO-0803-python-basics-module.yml
+#
+# Module content: manifest + 3 starter exercises for python-basics.
+# Layout mirrors modules/core/sql-basics/ exactly, with sub_engine=code
+# and no fixtures (Python has no DB to seed).
+
+id: SMO-0803
+title: "modules/core/python-basics/: manifest + 3 starter exercises (hello-world, even-or-odd, sum-to-n)"
+type: docs
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/core/python-basics/manifest.yml"
+    - "modules/core/python-basics/content/exercises/01-hello.yml"
+    - "modules/core/python-basics/content/exercises/02-conditionals.yml"
+    - "modules/core/python-basics/content/exercises/03-loops.yml"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "modules/catalogs/schemas/exercises/code.schema.json"
+    - "modules/core/sql-basics/manifest.yml"
+    - "modules/core/sql-basics/content/exercises/01-select.yml"
+  inputs:
+    manifest_fields:
+      id: "python-basics"
+      version: "1.0.0"
+      title: {en: "Python Basics", hi: "Python की मूल बातें"}
+      description:
+        en: "Learn Python fundamentals with interactive coding exercises."
+        hi: "इंटरैक्टिव कोडिंग अभ्यासों के साथ Python की मूल बातें सीखें।"
+      language: [en, hi]
+      age_band: "14-18"
+      difficulty: beginner
+      prerequisites: []
+      content_type: interactive-runner
+      sub_engine: code
+      entrypoint: "content/exercises/"
+      exercise_spec:
+        exercises:
+          - "content/exercises/01-hello.yml"
+          - "content/exercises/02-conditionals.yml"
+          - "content/exercises/03-loops.yml"
+      required_apps: [python3]
+      unlock_rules: [{kind: free}]
+      license: CC-BY-SA-4.0
+    exercise_01:
+      id: hello-world
+      prompt:
+        en: "Write a program that prints exactly: Hello, World!"
+        hi: "एक प्रोग्राम लिखें जो ठीक यही प्रिंट करे: Hello, World!"
+      starter_code: 'print("")'
+      test_cases:
+        - {input: "", expected_output: "Hello, World!", hidden: false}
+      hints:
+        - {en: "Use print() with the exact string.", hi: "print() को सटीक स्ट्रिंग के साथ उपयोग करें।"}
+      max_execution_ms: 5000
+      locale: [en, hi]
+    exercise_02:
+      id: even-or-odd
+      prompt:
+        en: "Read an integer from stdin and print 'even' if it is even, 'odd' if it is odd."
+        hi: "stdin से एक पूर्णांक पढ़ें और प्रिंट करें 'even' अगर वह सम है, 'odd' अगर वह विषम है।"
+      starter_code: "n = int(input())\n"
+      test_cases:
+        - {input: "4", expected_output: "even", hidden: false}
+        - {input: "7", expected_output: "odd", hidden: false}
+        - {input: "0", expected_output: "even", hidden: true}
+      hints:
+        - {en: "Use the modulo operator: n % 2 == 0 means even.", hi: "मॉड्यूलो ऑपरेटर उपयोग करें: n % 2 == 0 का मतलब सम।"}
+        - {en: "Use an if/else statement.", hi: "if/else स्टेटमेंट उपयोग करें।"}
+      max_execution_ms: 5000
+      locale: [en, hi]
+    exercise_03:
+      id: sum-to-n
+      prompt:
+        en: "Read an integer N from stdin and print the sum of all integers from 1 to N (inclusive)."
+        hi: "stdin से पूर्णांक N पढ़ें और 1 से N तक के सभी पूर्णांकों का योग प्रिंट करें।"
+      starter_code: "n = int(input())\n"
+      test_cases:
+        - {input: "5", expected_output: "15", hidden: false}
+        - {input: "10", expected_output: "55", hidden: false}
+        - {input: "1", expected_output: "1", hidden: true}
+      hints:
+        - {en: "Use a for loop with range(1, n+1).", hi: "range(1, n+1) के साथ for loop उपयोग करें।"}
+        - {en: "You can also use the formula n*(n+1)//2.", hi: "आप सूत्र n*(n+1)//2 भी उपयोग कर सकते हैं।"}
+      max_execution_ms: 5000
+      locale: [en, hi]
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/core/python-basics/manifest.yml"
+    - "modules/core/python-basics/content/exercises/01-hello.yml"
+    - "modules/core/python-basics/content/exercises/02-conditionals.yml"
+    - "modules/core/python-basics/content/exercises/03-loops.yml"
+
+S:
+  - "modules/core/python-basics/manifest.yml validates against modules/catalogs/schemas/module.schema.json; has content_type=interactive-runner, sub_engine=code, title and description with en+hi parity, no fixtures block"
+  - "01-hello.yml validates against modules/catalogs/schemas/exercises/code.schema.json; id=hello-world, language=python, one test_case, locale=[en,hi]"
+  - "02-conditionals.yml validates against code.schema.json; id=even-or-odd, 2 visible + 1 hidden test_case, two hints with en+hi"
+  - "03-loops.yml validates against code.schema.json; id=sum-to-n, 2 visible + 1 hidden test_case, two hints with en+hi"
+  - "bash scripts/verify/verify-manifests.sh exits 0 with new files present"
+  - "All exercise expected_outputs are exact-strip-match verifiable by python3 inline: e.g. `echo '' | python3 -c \"print('Hello, World!')\"` == 'Hello, World!'"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 25
+  max_files_changed: 4
+  max_diff_lines: 120
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0800 (ADR-0019) is on main"
+  - "SMO-0513 (code exercise schema) is on main"
+  - "SMO-0510 (module schema) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

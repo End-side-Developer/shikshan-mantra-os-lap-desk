@@ -1,0 +1,96 @@
+---
+# tasks/open/SMO-0805-frontend-dispatch.yml
+#
+# Frontend dispatch: teach engine_client.py to resolve the engine path from
+# the manifest's sub_engine field (sql -> engines/sql/main.py,
+# code -> engines/code/main.py). Set GtkSourceView language in window.py
+# based on sub_engine. Touches ≤ 20 lines across 2 files.
+
+id: SMO-0805
+title: "Frontend dispatch: engine_client.py + window.py resolve engine by sub_engine field"
+type: build-config
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/engine_client.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/window.py"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0019-code-engine-runtime.md"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/engine_client.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/window.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/catalog.py"
+  inputs:
+    engine_client_change: >
+      engine_client.py currently hardcodes the engine path as engines/sql/main.py.
+      Change the EngineClient constructor (or factory) to accept sub_engine as a
+      parameter and resolve the path as:
+        engine_dir = Path(__file__).parent.parent / "engines" / sub_engine
+        engine_script = engine_dir / "main.py"
+      EngineClient is already instantiated by session.py; session.py receives the
+      module manifest from catalog.py which exposes sub_engine. The change in
+      engine_client.py should require ≤ 10 lines of diff.
+    window_change: >
+      window.py sets the GtkSourceView SourceBuffer language via
+      GtkSource.LanguageManager. Currently hard-set to "sql". Change to:
+        lang_id = "python3" if sub_engine == "code" else "sql"
+        lang = lang_manager.get_language(lang_id)
+        buffer.set_language(lang)
+      sub_engine is available from the module manifest loaded when the user
+      selects a module in the sidebar. The change should require ≤ 10 lines of diff.
+    no_change_needed:
+      - "catalog.py — already reads sub_engine from manifest YAML"
+      - "session.py — already passes module dict; just update call site to pass sub_engine to EngineClient"
+      - "xapi.py — sub-engine-agnostic"
+      - "runner.py — sub-engine-agnostic"
+    locked_decision: >
+      Do not introduce a sub_engine registry or plugin system. Simple path
+      resolution string-format is correct for Phase-3. If sub_engine is not
+      'sql' or 'code', raise ValueError with a clear message — no fallback.
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/engine_client.py"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/src/window.py"
+
+S:
+  - "EngineClient resolves engine path from sub_engine parameter: engines/sql/main.py for sql, engines/code/main.py for code"
+  - "EngineClient raises ValueError (not a silent fallback) for an unrecognised sub_engine"
+  - "window.py sets GtkSourceView language to python3 when sub_engine=code, sql when sub_engine=sql"
+  - "python -m pytest tests/unit/vidyarthi/ -v passes (existing unit tests must not regress)"
+  - "python -c 'import py_compile; py_compile.compile(\"..../engine_client.py\")' exits 0"
+  - "python -c 'import py_compile; py_compile.compile(\"..../window.py\")' exits 0 (window.py is GTK-import-guarded so py_compile won't try to import gi)"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 30
+  max_files_changed: 2
+  max_diff_lines: 40
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0801 (engines/code/main.py) is on main"
+  - "SMO-0803 (python-basics manifest) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

@@ -1,0 +1,77 @@
+---
+# tasks/open/SMO-0808-python-smoke-runbook.yml
+#
+# Smoke runbook for the Vidyarthi Python MVP.
+# Documents how a human or CI operator verifies the Python coding module
+# end-to-end on a real or virtual machine.
+# Mirrors docs/runbooks/vidyarthi-sql-smoke.md.
+
+id: SMO-0808
+title: "docs/runbooks/vidyarthi-python-smoke.md: smoke runbook for Vidyarthi Python MVP"
+type: docs
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/runbooks/vidyarthi-python-smoke.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0019-code-engine-runtime.md"
+    - "docs/architecture/vidyarthi-xapi-subset.md"
+    - "scripts/vm/smo-vms.ps1"
+  inputs:
+    runbook_sections:
+      - "Prerequisites: live ISO built (via /iso-build or CI artifact), VirtualBox 7+ installed, smo-os-vm exists (scripts/vm/smo-vms.ps1)"
+      - "Step 1 — Build ISO: run /iso-build skill or download CI artifact"
+      - "Step 2 — Boot OS VM: pwsh scripts/vm/smo-vms.ps1 -Boot smo-os-vm"
+      - "Step 3 — Login as student (default credentials, same as SQL runbook)"
+      - "Step 4 — Open Vidyarthi: double-click Vidyarthi icon on Desktop"
+      - "Step 5 — Select Python Basics module from sidebar"
+      - "Step 6 — Select Hello, World! exercise"
+      - "Step 7 — Submit correct solution: print('Hello, World!')"
+      - "Step 8 — Assert green feedback, score badge shows 1/1"
+      - "Step 9 — Verify xAPI: open terminal, run sqlite3 command to check learner.db"
+      - "Step 10 — Optional: test even-or-odd and sum-to-n exercises"
+      - "Troubleshooting: engine not found (check sub_engine in manifest), timeout error (check max_execution_ms), no xAPI row (check learner.db path)"
+    mirror_of: "docs/runbooks/vidyarthi-sql-smoke.md — follow same structure, adjust module name, exercise names, submission code"
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/runbooks/vidyarthi-python-smoke.md"
+
+S:
+  - "docs/runbooks/vidyarthi-python-smoke.md exists with all 10 steps from inputs.runbook_sections"
+  - "Runbook includes exact commands for: booting VM (smo-vms.ps1), querying learner.db (sqlite3), verifying xAPI row"
+  - "Troubleshooting section covers engine-not-found, timeout, and missing xAPI row"
+  - "Document follows same Markdown structure as vidyarthi-sql-smoke.md"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 40000
+  max_wall_minutes: 20
+  max_files_changed: 1
+  max_diff_lines: 80
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0807 (E2E test) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null
