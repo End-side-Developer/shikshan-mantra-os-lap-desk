@@ -1,0 +1,172 @@
+{
+  "_comment": "libseccomp allowlist for the Vidyarthi code engine (ADR-0015, ADR-0019, SMO-0802). Compiled to BPF at package install time by vidyarthi postinst. Allows Python 3 interpreter startup (execve, fork, clone) and file/tmp operations. Explicitly denies network syscalls (socket, connect, bind, etc.) via default EACCES action. Default action EACCES rather than KILL allows graceful Python error handling on a blocked syscall.",
+  "default_action": "SCMP_ACT_ERRNO",
+  "syscalls": [
+    {
+      "_comment": "Explicitly deny all network syscalls — belt-and-suspenders with --unshare-net",
+      "names": [
+        "socket", "connect", "bind", "listen",
+        "accept", "accept4",
+        "sendto", "recvfrom",
+        "sendmsg", "recvmsg",
+        "sendmmsg", "recvmmsg",
+        "socketpair",
+        "setsockopt", "getsockopt",
+        "getsockname", "getpeername"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errno": 13
+    },
+    {
+      "_comment": "Allow: core I/O",
+      "names": [
+        "read", "write", "pread64", "pwrite64",
+        "readv", "writev", "preadv", "pwritev",
+        "open", "openat", "close",
+        "lseek", "sendfile"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: file metadata",
+      "names": [
+        "fstat", "stat", "lstat",
+        "newfstatat", "statx",
+        "access", "faccessat",
+        "getdents", "getdents64",
+        "getcwd", "chdir", "fchdir",
+        "fcntl", "fcntl64",
+        "dup", "dup2", "dup3",
+        "pipe", "pipe2"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: file creation and modification (needed for NamedTemporaryFile in /tmp)",
+      "names": [
+        "creat", "link", "linkat",
+        "unlink", "unlinkat",
+        "symlink", "symlinkat",
+        "readlink", "readlinkat",
+        "rename", "renameat", "renameat2",
+        "mkdir", "mkdirat",
+        "rmdir",
+        "chmod", "fchmod", "fchmodat",
+        "chown", "fchown", "fchownat", "lchown",
+        "umask", "utime", "utimes", "utimensat", "futimesat",
+        "mknod", "mknodat",
+        "truncate", "ftruncate",
+        "fallocate",
+        "fsync", "fdatasync",
+        "sync_file_range",
+        "flock"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: memory management",
+      "names": [
+        "mmap", "mmap2",
+        "mprotect", "munmap",
+        "mremap", "msync",
+        "mincore", "madvise",
+        "brk",
+        "mlock", "mlock2", "munlock",
+        "mlockall", "munlockall",
+        "pkey_mprotect", "pkey_alloc", "pkey_free"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: process / thread management — execve + fork + clone required for python3 child processes",
+      "names": [
+        "execve", "execveat",
+        "fork", "vfork",
+        "clone", "clone3",
+        "wait4", "waitid", "waitpid",
+        "exit", "exit_group",
+        "getpid", "getppid", "gettid",
+        "getpgrp", "setpgid", "setsid",
+        "getuid", "getgid", "geteuid", "getegid",
+        "getgroups", "setgroups",
+        "setuid", "setgid",
+        "kill", "tgkill", "tkill",
+        "prctl",
+        "arch_prctl",
+        "set_tid_address",
+        "set_robust_list", "get_robust_list",
+        "capget", "capset"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: signals",
+      "names": [
+        "rt_sigaction", "rt_sigprocmask",
+        "rt_sigreturn", "rt_sigsuspend",
+        "rt_sigpending", "rt_sigtimedwait",
+        "rt_sigqueueinfo", "rt_tgsigqueueinfo",
+        "sigaltstack",
+        "signalfd", "signalfd4"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: time and scheduling",
+      "names": [
+        "gettimeofday", "settimeofday",
+        "clock_gettime", "clock_settime",
+        "clock_getres", "clock_nanosleep",
+        "nanosleep",
+        "getitimer", "setitimer",
+        "timer_create", "timer_settime",
+        "timer_gettime", "timer_getoverrun", "timer_delete",
+        "timerfd_create", "timerfd_settime", "timerfd_gettime",
+        "times",
+        "sched_yield",
+        "sched_getaffinity", "sched_setaffinity",
+        "sched_getparam", "sched_setparam",
+        "sched_getscheduler", "sched_setscheduler",
+        "sched_setattr", "sched_getattr",
+        "sched_rr_get_interval",
+        "getrusage", "getrlimit", "prlimit64"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: poll/select/epoll — used by Python I/O machinery",
+      "names": [
+        "select", "pselect6",
+        "poll", "ppoll",
+        "epoll_create", "epoll_create1",
+        "epoll_ctl", "epoll_wait", "epoll_pwait",
+        "eventfd", "eventfd2"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: futex and atomic ops",
+      "names": [
+        "futex",
+        "membarrier",
+        "rseq"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "_comment": "Allow: misc kernel calls used by Python runtime",
+      "names": [
+        "uname",
+        "sysinfo",
+        "getrandom",
+        "memfd_create",
+        "ioctl",
+        "pause",
+        "restart_syscall",
+        "seccomp",
+        "userfaultfd"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}
