@@ -1,0 +1,34 @@
+id: python-basics
+version: "1.0.0"
+title:
+  en: "Python Basics"
+  hi: "Python की मूल बातें"
+description:
+  en: "Learn Python fundamentals with interactive coding exercises."
+  hi: "इंटरैक्टिव कोडिंग अभ्यासों के साथ Python की मूल बातें सीखें।"
+language: [en, hi]
+age_band: "14-18"
+difficulty: beginner
+prerequisites: []
+outcomes:
+  - en: "Write a Python program that prints output to the screen."
+    hi: "एक Python प्रोग्राम लिखें जो स्क्रीन पर आउटपुट प्रिंट करे।"
+  - en: "Use if/else to make decisions based on user input."
+    hi: "उपयोगकर्ता इनपुट के आधार पर निर्णय लेने के लिए if/else उपयोग करें।"
+  - en: "Use a loop to calculate a running sum."
+    hi: "एक चल योग की गणना करने के लिए लूप उपयोग करें।"
+content_type: interactive-runner
+sub_engine: code
+entrypoint: "content/exercises/"
+exercise_spec:
+  exercises:
+    - "content/exercises/01-hello.yml"
+    - "content/exercises/02-conditionals.yml"
+    - "content/exercises/03-loops.yml"
+required_apps:
+  - python3
+unlock_rules:
+  - kind: free
+license: CC-BY-SA-4.0
+checksum: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+signature: null

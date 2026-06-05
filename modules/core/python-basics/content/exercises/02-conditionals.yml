@@ -1,0 +1,32 @@
+id: even-or-odd
+version: "1.0.0"
+prompt:
+  en: >
+    Read an integer from stdin and print 'even' if it is even,
+    or 'odd' if it is odd. The number may be zero or negative.
+  hi: >
+    stdin से एक पूर्णांक पढ़ें और प्रिंट करें 'even' अगर वह सम है,
+    या 'odd' अगर वह विषम है। संख्या शून्य या ऋणात्मक हो सकती है।
+language: python
+starter_code: |
+  n = int(input())
+test_cases:
+  - input: "4"
+    expected_output: "even"
+    hidden: false
+  - input: "7"
+    expected_output: "odd"
+    hidden: false
+  - input: "0"
+    expected_output: "even"
+    hidden: true
+  - input: "-3"
+    expected_output: "odd"
+    hidden: true
+hints:
+  - en: "Use the modulo operator: if n % 2 == 0, the number is even."
+    hi: "मॉड्यूलो ऑपरेटर उपयोग करें: अगर n % 2 == 0, तो संख्या सम है।"
+  - en: "Use an if/else statement to choose between 'even' and 'odd'."
+    hi: "'even' और 'odd' के बीच चुनने के लिए if/else स्टेटमेंट उपयोग करें।"
+max_execution_ms: 5000
+locale: [en, hi]

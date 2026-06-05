@@ -1,0 +1,18 @@
+id: hello-world
+version: "1.0.0"
+prompt:
+  en: "Write a program that prints exactly: Hello, World!"
+  hi: "एक प्रोग्राम लिखें जो ठीक यही प्रिंट करे: Hello, World!"
+language: python
+starter_code: 'print("")'
+test_cases:
+  - input: ""
+    expected_output: "Hello, World!"
+    hidden: false
+hints:
+  - en: "Use the print() function with the exact string inside quotes."
+    hi: "print() फ़ंक्शन का उपयोग करें और कोट्स के अंदर सटीक स्ट्रिंग रखें।"
+  - en: "The output must match exactly — check spelling and punctuation."
+    hi: "आउटपुट बिल्कुल मेल खाना चाहिए — वर्तनी और विराम चिह्न जाँचें।"
+max_execution_ms: 5000
+locale: [en, hi]
