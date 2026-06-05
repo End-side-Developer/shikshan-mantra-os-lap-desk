@@ -1,0 +1,94 @@
+---
+# tasks/open/SMO-0807-e2e-python-mvp.yml
+#
+# E2E gate for the Vidyarthi Python MVP milestone:
+#   - tests/e2e/test_vidyarthi_python_mvp.sh  (new QEMU smoke script)
+#   - Extend tests/e2e/test_vidyarthi_sql_mvp.sh or add alongside as a sibling
+# The E2E test boots the ISO in QEMU, drives the Vidyarthi desktop app via
+# xdotool, selects python-basics/hello-world, submits a correct solution,
+# asserts xAPI scored statement in learner.db.
+
+id: SMO-0807
+title: "tests/e2e/test_vidyarthi_python_mvp.sh: E2E gate for Vidyarthi Python milestone"
+type: tests
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "tests/e2e/test_vidyarthi_python_mvp.sh"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "tests/e2e/test_vidyarthi_sql_mvp.sh"
+    - "docs/adr/0019-code-engine-runtime.md"
+    - "docs/architecture/vidyarthi-xapi-subset.md"
+  inputs:
+    test_flow: >
+      1. Boot ISO in QEMU (reuse helper from test_vidyarthi_sql_mvp.sh).
+      2. Login as student (default credentials).
+      3. Double-click Vidyarthi desktop icon (xdotool).
+      4. Wait for Vidyarthi window to open.
+      5. In the module sidebar, click "Python Basics" (title.en matches).
+      6. Wait for exercise list to populate.
+      7. Click "Hello, World!" exercise.
+      8. Clear the editor, type: print("Hello, World!")
+      9. Click the Submit button.
+      10. Assert green feedback visible (score=1 path in UI).
+      11. SSH into QEMU guest and run:
+            sqlite3 ~/.local/share/shikshan/learner.db \
+              "SELECT COUNT(*) FROM xapi_statements WHERE object_id LIKE '%python-basics%hello-world%';"
+          Assert result >= 1.
+      12. Shutdown QEMU.
+    structure: >
+      Mirror tests/e2e/test_vidyarthi_sql_mvp.sh line-for-line, changing:
+        MODULE_TITLE="Python Basics"
+        EXERCISE_TITLE="Hello, World!"
+        SUBMISSION_CODE='print("Hello, World!")'
+        XAPI_FILTER='%python-basics%hello-world%'
+      Add a SKIP_E2E guard: if VIDYARTHI_SKIP_E2E=1 or no QEMU available, print
+      "SKIP: E2E requires QEMU" and exit 0 (matches sql E2E skip pattern).
+    exec_bit: "tests/e2e/test_vidyarthi_python_mvp.sh must be marked +x (git update-index --chmod=+x)"
+
+O:
+  pr_url: null
+  tests_added:
+    - "tests/e2e/test_vidyarthi_python_mvp.sh"
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "tests/e2e/test_vidyarthi_python_mvp.sh"
+
+S:
+  - "tests/e2e/test_vidyarthi_python_mvp.sh exists and is executable (+x)"
+  - "Script has SKIP_E2E guard: exits 0 with message if VIDYARTHI_SKIP_E2E=1"
+  - "VIDYARTHI_SKIP_E2E=1 bash tests/e2e/test_vidyarthi_python_mvp.sh exits 0 on Windows dev box"
+  - "Script follows same QEMU boot/drive/shutdown pattern as test_vidyarthi_sql_mvp.sh"
+  - "xAPI assertion queries learner.db for object_id matching python-basics + hello-world"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 25
+  max_files_changed: 1
+  max_diff_lines: 120
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0805 (frontend dispatch) is on main"
+  - "SMO-0804 (catalog registration) is on main"
+  - "SMO-0806 (engine unit tests) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

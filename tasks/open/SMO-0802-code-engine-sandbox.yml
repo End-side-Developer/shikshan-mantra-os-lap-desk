@@ -1,0 +1,92 @@
+---
+# tasks/open/SMO-0802-code-engine-sandbox.yml
+#
+# Sandbox profiles for the Python code sub-engine:
+#   engines/code/sandbox.bwrap   — bubblewrap namespace args
+#   engines/code/seccomp.json    — seccomp syscall filter
+# Mirrors engines/sql/{sandbox.bwrap,seccomp.json} exactly, adjusted for
+# the Python interpreter's fork/exec requirements.
+
+id: SMO-0802
+title: "engines/code/sandbox.bwrap + seccomp.json: sandbox profiles for Python sub-engine"
+type: build-config
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/code/sandbox.bwrap"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/code/seccomp.json"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+    - "docs/adr/0019-code-engine-runtime.md"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/sandbox.bwrap"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/sql/seccomp.json"
+  inputs:
+    sandbox_bwrap_contract: >
+      File is a line-per-flag bubblewrap args file (same shape as sql/sandbox.bwrap).
+      Required flags: --unshare-net, --unshare-pid, --unshare-ipc, --unshare-uts,
+      read-only bind of the engine bundle (--ro-bind <bundle_dir> /bundle),
+      writable /tmp tmpfs (--tmpfs /tmp), /dev/null bind, /proc proc bind.
+      prlimit wrapper args (applied by EngineClient, documented here as comments):
+        AS=268435456 (256 MB), NPROC=8, CPU=20.
+    seccomp_contract: >
+      JSON seccomp filter. Must ALLOW: read, write, open, openat, close, fstat,
+      stat, lstat, mmap, mprotect, munmap, brk, rt_sigaction, rt_sigprocmask,
+      sigreturn, ioctl, access, execve, fork, clone, wait4, waitpid, exit,
+      exit_group, getpid, getppid, getcwd, chdir, arch_prctl, set_tid_address,
+      set_robust_list, futex, prctl, poll, select, pread64, pwrite64, lseek,
+      getdents64, fcntl, dup, dup2, pipe, pipe2, sendfile, readlink, symlink,
+      unlink, mkdir, rmdir, rename, chmod, fchmod, uname, gettimeofday, clock_gettime,
+      nanosleep, sched_yield, getrlimit, prlimit64.
+      Must DENY (EACCES): socket, connect, bind, listen, accept, sendto, recvfrom,
+      sendmsg, recvmsg, socketpair.
+    locked_decision: >
+      seccomp is applied with SCMP_ACT_ERRNO(EACCES) as default action on deny
+      (not SCMP_ACT_KILL) to allow graceful Python error handling. EngineClient
+      applies seccomp only on Linux when VIDYARTHI_SANDBOX=auto (same logic as
+      sql engine — no change to EngineClient needed).
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/code/sandbox.bwrap"
+    - "config/includes.chroot/usr/share/shikshan/vidyarthi/engines/code/seccomp.json"
+
+S:
+  - "sandbox.bwrap exists and contains --unshare-net, --unshare-pid, --tmpfs /tmp flags (one flag per line or space-separated, consistent with sql/sandbox.bwrap format)"
+  - "seccomp.json is valid JSON and includes explicit allow list for execve, fork, clone (required for python3 interpreter startup)"
+  - "seccomp.json explicitly denies socket, connect, bind"
+  - "prlimit values (AS, NPROC, CPU) are documented in sandbox.bwrap as comments"
+  - "Files are consistent in shape and naming convention with engines/sql/sandbox.bwrap and engines/sql/seccomp.json"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 40000
+  max_wall_minutes: 20
+  max_files_changed: 2
+  max_diff_lines: 100
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0800 (ADR-0019) is on main"
+  - "SMO-0801 (engines/code/main.py) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

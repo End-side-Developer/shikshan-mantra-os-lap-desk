@@ -1,0 +1,74 @@
+---
+# tasks/open/SMO-0804-python-catalog-registration.yml
+#
+# Register python-basics in the official catalog and verify package-list
+# already covers python3 (no new packages needed).
+
+id: SMO-0804
+title: "Register python-basics in official.catalog.yml + verify package-list coverage"
+type: build-config
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "modules/catalogs/official.catalog.yml"
+    - "config/package-lists/vidyarthi.list.chroot"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "modules/core/python-basics/manifest.yml"
+    - "modules/core/sql-basics/manifest.yml"
+    - "modules/catalogs/official.catalog.yml"
+  inputs:
+    catalog_entry_to_add:
+      id: python-basics
+      version: "1.0.0"
+    package_list_note: >
+      python3 must be present in vidyarthi.list.chroot. It was added by the
+      sql-basics module (SMO-0615). If already present, no change needed.
+      No new packages required — the code engine is pure stdlib.
+    locked_decision: >
+      Append the catalog entry in the same YAML list as sql-basics. Do not
+      reorder existing entries. Do not add a new file — only append to
+      official.catalog.yml. If python3 is already in the package list, leave it
+      unchanged and note "no change needed" in the PR description.
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "modules/catalogs/official.catalog.yml"
+
+S:
+  - "official.catalog.yml contains entry {id: python-basics, version: 1.0.0} in the modules list"
+  - "bash scripts/verify/verify-manifests.sh exits 0 after the catalog update"
+  - "python3 appears in config/package-lists/vidyarthi.list.chroot (pre-existing or newly added)"
+  - "No other packages added — code engine uses pure stdlib"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 30000
+  max_wall_minutes: 15
+  max_files_changed: 2
+  max_diff_lines: 20
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0803 (python-basics manifest + exercises) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null

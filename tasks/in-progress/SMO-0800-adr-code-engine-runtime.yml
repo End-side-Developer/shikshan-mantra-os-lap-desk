@@ -1,0 +1,81 @@
+---
+# tasks/open/SMO-0800-adr-code-engine-runtime.yml
+#
+# ADR-0019: code engine runtime & sandbox contract for Python sub-engine.
+# This is the first task in the python-basics batch (SMO-0800..0808).
+# All subsequent tasks list this as a precondition.
+
+id: SMO-0800
+title: "ADR-0019: code engine runtime & sandbox contract (Python sub-engine)"
+type: adr
+linked_adr: "docs/adr/0019-code-engine-runtime.md"
+agent: claude-code
+
+I:
+  files_in_scope:
+    - "docs/adr/0019-code-engine-runtime.md"
+  context_docs:
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "PLAN.md"
+    - "docs/adr/0011-engine-ipc.md"
+    - "docs/adr/0015-sandbox-primitive.md"
+    - "modules/catalogs/schemas/exercises/code.schema.json"
+  inputs:
+    decision_summary: >
+      The code sub-engine (sub_engine=code) grades Python programs by running
+      the learner's submission as a Python 3 subprocess, feeding each test_case
+      input on stdin, capturing stdout, and comparing to expected_output after
+      strip(). Grading is per test_case (all must pass for score=1). Engine is
+      pure stdlib — no PyPI imports, no network, no host filesystem outside /tmp.
+      Sandbox: bubblewrap namespace isolation (--unshare-net, --unshare-pid,
+      writable /tmp tmpfs) + prlimit (AS=256 MB, NPROC=8, CPU=20 s). Per-test
+      wall timeout from exercise max_execution_ms (default 10000, clamped by
+      schema to 100..30000 ms). JSON-RPC 2.0 over stdio per ADR-0011. Returns
+      -32003 on timeout, score=0 + SyntaxError in feedback on parse failure.
+    related_adrs:
+      - "ADR-0011: engine IPC contract (JSON-RPC 2.0 framing) — reused as-is"
+      - "ADR-0015: sandbox primitive (bubblewrap + seccomp) — reused as-is"
+    status: Accepted
+
+O:
+  pr_url: null
+  tests_added: []
+  coverage_delta: 0
+  sbom_diff: null
+  artifacts:
+    - "docs/adr/0019-code-engine-runtime.md"
+
+S:
+  - "docs/adr/0019-code-engine-runtime.md exists with status Accepted"
+  - "ADR covers: grading contract (stdin/stdout exact match), timeout behaviour (-32003), resource limits (AS/NPROC/CPU via prlimit), language restriction (python only, Phase-3), stdlib-only constraint, sandbox composition (bwrap --unshare-net --unshare-pid + prlimit)"
+  - "ADR references ADR-0011 (IPC framing) and ADR-0015 (sandbox) as foundations"
+  - "ADR cross-references code.schema.json fields (test_cases, max_execution_ms, language)"
+  - "Bilingual note included: all feedback dicts must have en + hi keys"
+  - "pre-commit passes (SKIP list per CLAUDE.md Phase-3)"
+
+R:
+  max_tokens: 60000
+  max_wall_minutes: 20
+  max_files_changed: 1
+  max_diff_lines: 120
+
+T:
+  stale_after_hours: 72
+
+preconditions:
+  - "SMO-0513 (code exercise schema) is on main"
+  - "SMO-0500 (ADR-0011 engine IPC) is on main"
+  - "SMO-0504 (ADR-0015 sandbox primitive) is on main"
+  - "no path in I.files_in_scope intersects policies/protected-paths.yml#deny"
+
+recovery:
+  on_budget_exceeded: "move to blocked/ with label needs-human"
+  on_protected_path_hit: "abort, write incident to audit, ping CODEOWNERS"
+  on_test_failure_after_2_attempts: "open draft PR, label needs-help"
+  escalation_contacts:
+    - "shikshan/platform"
+
+audit:
+  first_audit_seq: null
+  last_audit_seq: null
