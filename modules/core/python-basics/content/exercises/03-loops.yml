@@ -1,0 +1,32 @@
+id: sum-to-n
+version: "1.0.0"
+prompt:
+  en: >
+    Read an integer N from stdin and print the sum of all integers
+    from 1 to N (inclusive). Assume N >= 1.
+  hi: >
+    stdin से पूर्णांक N पढ़ें और 1 से N तक के सभी पूर्णांकों का योग
+    प्रिंट करें (N सम्मिलित)। मान लें N >= 1।
+language: python
+starter_code: |
+  n = int(input())
+test_cases:
+  - input: "5"
+    expected_output: "15"
+    hidden: false
+  - input: "10"
+    expected_output: "55"
+    hidden: false
+  - input: "1"
+    expected_output: "1"
+    hidden: true
+  - input: "100"
+    expected_output: "5050"
+    hidden: true
+hints:
+  - en: "Use a for loop: for i in range(1, n+1) and add each i to a total."
+    hi: "for लूप उपयोग करें: for i in range(1, n+1) और हर i को कुल में जोड़ें।"
+  - en: "You can also use the formula: n * (n + 1) // 2"
+    hi: "आप सूत्र भी उपयोग कर सकते हैं: n * (n + 1) // 2"
+max_execution_ms: 5000
+locale: [en, hi]
