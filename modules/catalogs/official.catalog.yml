@@ -18,5 +18,9 @@ modules:            # populated as modules under modules/core/ ship
     version: "1.0.0"
     checksum: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
     path: "modules/core/sql-basics/manifest.yml"
+  - id: python-basics
+    version: "1.0.0"
+    checksum: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    path: "modules/core/python-basics/manifest.yml"
 
 signature: null     # populated by release-cosign-sign.yml
