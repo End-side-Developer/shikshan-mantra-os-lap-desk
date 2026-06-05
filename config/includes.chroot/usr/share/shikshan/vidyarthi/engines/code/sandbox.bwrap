@@ -1,0 +1,34 @@
+# sandbox.bwrap — bubblewrap invocation profile for the Vidyarthi code engine
+# (ADR-0015, ADR-0019, SMO-0802)
+#
+# Usage (from EngineClient on Linux when VIDYARTHI_SANDBOX=auto):
+#   bwrap $(cat /path/to/sandbox.bwrap) \
+#         --ro-bind /module /module \
+#         --seccomp 7 \
+#         /engine/main.py
+#
+# The launcher substitutes /module with the actual bundle path and /engine
+# with the engine binary directory before exec.
+#
+# prlimit values (applied by EngineClient via --prlimit or prlimit(1)):
+#   AS=268435456   (256 MB address space)
+#   NPROC=8        (max child processes — enough for python3 + one subprocess)
+#   CPU=20         (hard ceiling of 20 CPU-seconds, above any per-test timeout)
+
+--ro-bind /usr /usr
+--ro-bind /lib /lib
+--ro-bind /lib64 /lib64
+--ro-bind /bin /bin
+--ro-bind /sbin /sbin
+--ro-bind /etc/alternatives /etc/alternatives
+--ro-bind /etc/ld.so.conf /etc/ld.so.conf
+--ro-bind /etc/ld.so.conf.d /etc/ld.so.conf.d
+--tmpfs /tmp
+--proc /proc
+--dev /dev
+--unshare-net
+--unshare-pid
+--unshare-ipc
+--unshare-uts
+--die-with-parent
+--new-session
