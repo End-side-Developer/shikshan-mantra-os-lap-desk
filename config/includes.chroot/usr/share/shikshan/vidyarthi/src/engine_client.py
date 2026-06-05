@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""JSON-RPC 2.0 client for the Vidyarthi engine subprocess (SMO-0611).
+"""JSON-RPC 2.0 client for the Vidyarthi engine subprocess (SMO-0611, SMO-0805).
 
 GTK-free. Speaks the protocol from docs/architecture/vidyarthi-engine-rpc.md to
-``engines/sql/main.py`` over stdio: one JSON object per line each way.
+the appropriate engine subprocess (sql, code, …) over stdio: one JSON object per
+line each way. The engine is selected by reading ``sub_engine`` from the module
+manifest in the bundle at ``init()`` time (ADR-0019).
 
 The engine is spawned directly by default.  On Linux, when ``bwrap`` is present
 (and ``VIDYARTHI_SANDBOX`` is not ``0``), the engine is wrapped with the
@@ -21,11 +23,34 @@ import shutil
 import subprocess
 import sys
 
-# Engine binary lives at <vidyarthi>/engines/sql/main.py, two levels up from
-# this src/ file — true for both the installed tree and the repo checkout.
-_ENGINE_DIR = pathlib.Path(__file__).resolve().parent.parent / "engines" / "sql"
-_ENGINE_MAIN = _ENGINE_DIR / "main.py"
-_SANDBOX_PROFILE = _ENGINE_DIR / "sandbox.bwrap"
+import yaml
+
+# Root of the engines directory: <vidyarthi>/engines/
+_ENGINES_ROOT = pathlib.Path(__file__).resolve().parent.parent / "engines"
+_SUPPORTED_SUB_ENGINES = frozenset({"sql", "code"})
+
+
+def _engine_dirs(sub_engine: str) -> tuple[pathlib.Path, pathlib.Path]:
+    """Return (engine_dir, sandbox_profile) for the given sub_engine."""
+    if sub_engine not in _SUPPORTED_SUB_ENGINES:
+        raise ValueError(
+            f"unsupported sub_engine {sub_engine!r}; "
+            f"supported: {sorted(_SUPPORTED_SUB_ENGINES)}"
+        )
+    engine_dir = _ENGINES_ROOT / sub_engine
+    return engine_dir, engine_dir / "sandbox.bwrap"
+
+
+def _read_sub_engine(bundle: pathlib.Path) -> str:
+    """Read sub_engine from the module manifest; default to 'sql' if absent."""
+    manifest = bundle / "manifest.yml"
+    if manifest.exists():
+        try:
+            data = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
+            return data.get("sub_engine", "sql")
+        except (OSError, yaml.YAMLError):
+            pass
+    return "sql"
 
 
 class EngineError(RuntimeError):
@@ -39,11 +64,21 @@ class EngineClient:
         self._sandbox = sandbox
         self._proc: subprocess.Popen | None = None
         self._next_id = 0
+        self._sub_engine: str = "sql"
+        self._engine_dir: pathlib.Path = _ENGINES_ROOT / "sql"
+        self._sandbox_profile: pathlib.Path = _ENGINES_ROOT / "sql" / "sandbox.bwrap"
 
     # ── lifecycle ────────────────────────────────────────────────────────────
     def init(self, bundle_path) -> dict:
-        """Spawn the engine (binding ``bundle_path`` when sandboxed) and init."""
+        """Spawn the engine (binding ``bundle_path`` when sandboxed) and init.
+
+        Reads ``sub_engine`` from the module manifest inside bundle_path to
+        select the correct engine binary (engines/sql/main.py, engines/code/main.py,
+        etc.) — no caller change required (ADR-0019, SMO-0805).
+        """
         bundle = pathlib.Path(bundle_path).resolve()
+        self._sub_engine = _read_sub_engine(bundle)
+        self._engine_dir, self._sandbox_profile = _engine_dirs(self._sub_engine)
         cmd = self._build_command(bundle)
         self._proc = subprocess.Popen(
             cmd,
@@ -53,7 +88,7 @@ class EngineClient:
             text=True,
             bufsize=1,
         )
-        return self._call("init", {"engine_id": "sql", "bundle_path": str(bundle)})
+        return self._call("init", {"engine_id": self._sub_engine, "bundle_path": str(bundle)})
 
     def load_exercise(self, exercise_id: str) -> dict:
         return self._call("load_exercise", {"exercise_id": exercise_id})
@@ -134,30 +169,31 @@ class EngineClient:
         return platform.system() == "Linux" and shutil.which("bwrap") is not None
 
     def _build_command(self, bundle: pathlib.Path) -> list[str]:
+        engine_main = self._engine_dir / "main.py"
         if not self._use_sandbox():
             python = sys.executable or "python3"
-            return [python, str(_ENGINE_MAIN)]
+            return [python, str(engine_main)]
 
         bwrap = shutil.which("bwrap")
         cmd: list[str] = [bwrap]
-        for raw in _read_profile_lines():
+        for raw in _read_profile_lines(self._sandbox_profile):
             tokens = raw.split()
             # Drop ro-binds whose source is absent on this host (e.g. /lib64).
             if len(tokens) == 3 and tokens[0] == "--ro-bind":
                 if not pathlib.Path(tokens[1]).exists():
                     continue
             cmd.extend(tokens)
-        cmd += ["--ro-bind", str(_ENGINE_DIR), str(_ENGINE_DIR)]
+        cmd += ["--ro-bind", str(self._engine_dir), str(self._engine_dir)]
         cmd += ["--ro-bind", str(bundle), str(bundle)]
-        cmd += ["/usr/bin/python3", str(_ENGINE_MAIN)]
+        cmd += ["/usr/bin/python3", str(engine_main)]
         return cmd
 
 
-def _read_profile_lines() -> list[str]:
-    if not _SANDBOX_PROFILE.exists():
+def _read_profile_lines(profile: pathlib.Path) -> list[str]:
+    if not profile.exists():
         return []
     lines = []
-    for line in _SANDBOX_PROFILE.read_text(encoding="utf-8").splitlines():
+    for line in profile.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line and not line.startswith("#"):
             lines.append(line)

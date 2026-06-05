@@ -5,6 +5,7 @@ Executes Python 3 submissions in a child subprocess, grades via stdin/stdout
 exact-match per code.schema.json test_cases. Pure stdlib only.
 """
 
+import io
 import json
 import os
 import pathlib
@@ -12,6 +13,10 @@ import subprocess
 import sys
 import tempfile
 import yaml
+
+# Force UTF-8 stdout so Hindi feedback serialises correctly on all platforms.
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", line_buffering=True)
 
 ENGINE_ID = "code"
 ENGINE_VERSION = "0.1.0"

@@ -124,7 +124,12 @@ class VidyarthiWindow(Adw.ApplicationWindow):
         view.append(prompt)
 
         self._buffer = GtkSource.Buffer()
-        lang = GtkSource.LanguageManager.get_default().get_language("sql")
+        sub_engine = getattr(session, "sub_engine", None) or (
+            catalog.load_manifest(module_id) or {}
+        ).get("sub_engine", "sql")
+        _LANG_MAP = {"code": "python3", "sql": "sql"}
+        lang_id = _LANG_MAP.get(sub_engine, "sql")
+        lang = GtkSource.LanguageManager.get_default().get_language(lang_id)
         if lang is not None:
             self._buffer.set_language(lang)
         self._buffer.set_text(session.starter or "")
